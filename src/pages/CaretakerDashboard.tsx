@@ -311,8 +311,6 @@ export default function CaretakerDashboard() {
                 .from("profiles")
                 .update({
                     caretaker_email: caretakerEmail,
-                    // If we had more columns we'd put them here. 
-                    // For now we persist caretaker_email which is in schema.
                 })
                 .eq("id", targetUserId);
             if (error) throw error;
@@ -337,7 +335,7 @@ export default function CaretakerDashboard() {
     return (
         <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-10 animate-fade-in pb-20 font-sans">
             {/* Caretaker Header & Stats Card */}
-            <div className="flex flex-col lg:flex-row items-start justify-between gap-6 pb-6 border-b border-slate-200/50">
+            <div className="flex flex-col lg:flex-row items-start justify-between gap-6 pb-2">
                 {/* Left Side: Greeting & Role */}
                 <div className="space-y-1 pt-8">
                     <p className="text-sm font-medium text-slate-500">{getGreeting()},</p>
@@ -357,6 +355,11 @@ export default function CaretakerDashboard() {
                         <div className="space-y-2">
                             <p className="text-sm font-medium text-slate-500">Today's Dosage:</p>
                             <div className="text-3xl font-bold text-slate-700">{stats.taken}/{stats.today}</div>
+                            {stats.taken > 0 && stats.taken === stats.today && (
+                                <div className="h-6 w-6 ml-2 flex items-center justify-center rounded-full transition-all shadow-sm bg-emerald-500 text-white">
+                                    <Check className="w-4 h-4 stroke-[3]" />
+                                </div>
+                            )}
                         </div>
 
                         {/* Adherence Rate */}
@@ -390,7 +393,7 @@ export default function CaretakerDashboard() {
                     <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white">
                         <div>
                             <h2 className="text-xl font-bold text-slate-800 tracking-tight">Medication Schedule</h2>
-                            <p className="text-xs font-medium text-slate-400 mt-1 uppercase tracking-widest">{format(selectedDate, "EEEE, MMMM dd, yyyy")}</p>
+                            <p className="text-xs font-medium text-slate-400 mt-1 tracking-widest">{format(selectedDate, "EEEE, MMMM dd, yyyy")}</p>
                         </div>
                     </div>
                     <div className="divide-y divide-slate-100">
@@ -405,7 +408,7 @@ export default function CaretakerDashboard() {
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-3">
-                                                <span className="text-xs font-bold text-slate-500">{med.reminder_time}</span>
+                                                <span className="text-xs font-bold text-blue-400 font-sans">{med.reminder_time}</span>
                                                 <h3 className="text-lg font-bold text-slate-800">{med.name}</h3>
                                             </div>
                                             <p className="text-xs font-medium text-slate-400 mt-0.5">{med.dosage} • {med.instructions || 'Take as prescribed'}</p>
@@ -414,15 +417,15 @@ export default function CaretakerDashboard() {
                                     <div className="flex items-center gap-3">
                                         <button
                                             onClick={() => handleDeleteMedication(med.id)}
-                                            className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all border border-slate-100"
+                                            className="h-8 w-8 flex items-center justify-center rounded-xl bg-slate-50 text-rose-400 hover:bg-rose-50 hover:text-red-500 transition-all border border-slate-100"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                         <div className={cn(
-                                            "h-10 w-10 flex items-center justify-center rounded-full transition-all shadow-sm",
+                                            "h-6 w-6 flex items-center justify-center rounded-full transition-all shadow-sm",
                                             taken ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-300"
                                         )}>
-                                            {taken ? <Check className="w-6 h-6 stroke-[3]" /> : <X className="w-5 h-5" />}
+                                            {taken ? <Check className="w-4 h-4 stroke-[3]" /> : <X className="w-4 h-4" />}
                                         </div>
                                     </div>
                                 </div>
@@ -475,15 +478,14 @@ export default function CaretakerDashboard() {
                             <div className="flex items-center justify-between">
                                 <h2 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
                                     <span className="h-6 w-1 bg-blue-500 rounded-full"></span>
-                                    New Notification
+                                    Schedule patient's medication
                                 </h2>
-                                <span className="text-[10px] font-bold text-slate-400 tracking-widest bg-slate-50 px-3 py-1 rounded-lg border border-slate-100">Personal Schedule</span>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 tracking-widest flex items-center gap-2">
-                                        <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Medication Name
+                                    <label className="text-xs font-medium text-slate-400 mt-0.5 flex items-center gap-2">
+                                        <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Medicine Name
                                     </label>
                                     <Input
                                         value={medName}
@@ -494,7 +496,7 @@ export default function CaretakerDashboard() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 tracking-widest flex items-center gap-2">
+                                    <label className="text-xs font-medium text-slate-400 mt-0.5 flex items-center gap-2">
                                         <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Target Date
                                     </label>
                                     <div className="relative group">
@@ -511,7 +513,7 @@ export default function CaretakerDashboard() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 tracking-widest flex items-center gap-2">
+                                    <label className="text-xs font-medium text-slate-400 mt-0.5 flex items-center gap-2">
                                         <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Reminder Time
                                     </label>
                                     <div className="relative group">
@@ -526,7 +528,7 @@ export default function CaretakerDashboard() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 tracking-widest flex items-center gap-2">
+                                    <label className="text-xs font-medium text-slate-400 mt-0.5 flex items-center gap-2">
                                         <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Dosage
                                     </label>
                                     <div className="relative group">
@@ -542,7 +544,7 @@ export default function CaretakerDashboard() {
                             </div>
 
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-400 tracking-widest flex items-center gap-2">
+                                <label className="text-xs font-medium text-slate-400 mt-0.5 flex items-center gap-2">
                                     <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Instructions / Note
                                 </label>
 
@@ -608,7 +610,7 @@ export default function CaretakerDashboard() {
                                     </div>
 
                                     <div className="bg-white rounded-xl p-4 border border-slate-100 space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 tracking-widest">Email Address</label>
+                                        <label className="text-xs font-medium text-slate-400 mt-0.5">Email Address</label>
                                         <div className="relative">
                                             <Input
                                                 value={caretakerEmail}
@@ -649,7 +651,7 @@ export default function CaretakerDashboard() {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 tracking-widest">Alert Delay</label>
+                                            <label className="text-xs font-medium text-slate-400 mt-0.5">Alert Delay</label>
                                             <div className="relative">
                                                 <select
                                                     value={alertDelay}
@@ -664,7 +666,7 @@ export default function CaretakerDashboard() {
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 tracking-widest">Daily reminder time</label>
+                                            <label className="text-xs font-medium text-slate-400 mt-0.5">Daily reminder time</label>
                                             <div className="relative">
                                                 <Input
                                                     type="time"
