@@ -702,13 +702,15 @@ export default function CaretakerDashboard() {
                                     </div>
                                 </div>
 
-                                <Button
-                                    onClick={handleSaveSettings}
-                                    disabled={isSavingSettings}
-                                    className="w-full h-14 bg-[#55a075] hover:bg-[#448b63] text-white rounded-xl font-bold text-lg shadow-lg shadow-emerald-500/10 transition-all active:scale-[0.98]"
-                                >
-                                    {isSavingSettings ? "Saving Settings..." : "Save Notification Settings"}
-                                </Button>
+                                <div className="flex pt-4">
+                                    <Button
+                                        onClick={handleSaveSettings}
+                                        disabled={isSavingSettings}
+                                        className="h-11 px-8 bg-[#55a075] hover:bg-[#448b63] text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-500/10 transition-all active:scale-[0.98]"
+                                    >
+                                        {isSavingSettings ? "Saving Settings..." : "Save Notification Settings"}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     )}

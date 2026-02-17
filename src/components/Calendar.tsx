@@ -14,10 +14,11 @@ interface CalendarProps {
     selectedDate: Date
     onDateSelect: (date: Date) => void
     logs?: MedicationLog[]
+    medications?: any[]
     className?: string
 }
 
-export default function Calendar({ selectedDate, onDateSelect, logs, className }: CalendarProps) {
+export default function Calendar({ selectedDate, onDateSelect, logs, medications, className }: CalendarProps) {
     const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('monthly')
     const [currentDate, setCurrentDate] = useState(new Date())
 
@@ -49,26 +50,39 @@ export default function Calendar({ selectedDate, onDateSelect, logs, className }
     }, [currentDate, viewMode])
 
     const getDayStatus = (date: Date) => {
-        if (!logs) return 'neutral'
+        const dateStr = format(date, "yyyy-MM-dd");
+        const isPastDay = isPast(date) && !isToday(date);
 
-        // If it's today, we might want to show partial/pending status?
-        // But for now sticking to taken/missed logic.
+        // 1. Find medications scheduled for this day
+        const medsForDay = (medications || []).filter(med => {
+            if (!med.target_date) return true; // Daily routine
+            return med.target_date === dateStr; // Specific date
+        });
 
-        const dateStr = format(date, "yyyy-MM-dd")
-        const daysLogs = logs.filter(l => l.date === dateStr)
+        // 2. Check logs for this day
+        const dayLogs = (logs || []).filter(l => l.date === dateStr && l.taken);
 
-        if (daysLogs.length === 0) return 'neutral'
+        // 3. Logic: All taken = Green (Only if there ARE medications)
+        if (medsForDay.length > 0 && dayLogs.length >= medsForDay.length) {
+            return 'taken';
+        }
 
-        const allTaken = daysLogs.every(l => l.taken)
-        if (allTaken) return 'taken'
+        // 4. User request: Mark all past days as Red if not 'taken'
+        // If it's a past day and we don't have a 'taken' status, it's 'missed' (Red)
+        if (isPastDay) {
+            return 'missed';
+        }
 
-        // If some logs exist but not all taken, it's either partial (if today) or missed (if past).
-        // Simplification: if any taken false -> missed (red).
-        return 'missed'
+        // 5. Today's logic: Show red only if some are missed
+        if (isToday(date) && medsForDay.length > 0 && dayLogs.length < medsForDay.length) {
+            return 'missed';
+        }
+
+        return 'neutral';
     }
 
     return (
-        <div className={cn("bg-white rounded-3xl p-8 shadow-sm border border-slate-100 w-full max-w-md mx-auto font-sans", className)}>
+        <div className={cn("bg-white rounded-[32px] p-8 shadow-sm hover:shadow-md border border-slate-100 w-full h-full font-sans transition-all duration-300", className)}>
             <div className="flex items-center justify-between mb-8">
                 <h2 className="text-xl font-bold text-slate-800 tracking-tight">Calendar View</h2>
 
@@ -92,28 +106,28 @@ export default function Calendar({ selectedDate, onDateSelect, logs, className }
             </div>
 
             {/* Navigation Header - Centered Month */}
-            <div className="flex items-center justify-between mb-8 px-2">
+            <div className="flex items-center justify-between mb-6 px-1">
                 <button
                     onClick={handlePrevious}
-                    className="h-10 w-10 flex items-center justify-center hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-600 border border-slate-100"
+                    className="h-8 w-8 flex items-center justify-center hover:bg-slate-50 rounded-lg transition-colors text-slate-400 hover:text-slate-800 border border-slate-100 shadow-sm"
                 >
-                    <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
+                    <ChevronLeft className="w-4 h-4 stroke-[3]" />
                 </button>
-                <div className="text-base font-bold text-slate-800">
+                <div className="text-sm font-bold text-slate-700 tracking-tight">
                     {format(currentDate, "MMMM yyyy")}
                 </div>
                 <button
                     onClick={handleNext}
-                    className="h-10 w-10 flex items-center justify-center hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-600 border border-slate-100"
+                    className="h-8 w-8 flex items-center justify-center hover:bg-slate-50 rounded-lg transition-colors text-slate-400 hover:text-slate-800 border border-slate-100 shadow-sm"
                 >
-                    <ChevronRight className="w-5 h-5 stroke-[2.5]" />
+                    <ChevronRight className="w-4 h-4 stroke-[3]" />
                 </button>
             </div>
 
             {/* Days Grid */}
-            <div className="grid grid-cols-7 gap-y-1 gap-x-1 mb-2">
-                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                    <div key={day} className="text-xs font-medium text-slate-400 text-center">{day}</div>
+            <div className="grid grid-cols-7 gap-y-2 gap-x-2 mb-2">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                    <div key={i} className="text-[10px] font-bold text-slate-400 text-center uppercase tracking-widest">{day}</div>
                 ))}
 
                 {viewMode === 'monthly' && Array.from({ length: getDay(startOfMonth(currentDate)) }).map((_, i) => (
@@ -130,8 +144,8 @@ export default function Calendar({ selectedDate, onDateSelect, logs, className }
                     let textClass = "text-slate-600"
 
                     if (isSelected) {
-                        bgClass = "bg-slate-100 ring-2 ring-slate-200" // Selection ring
-                        textClass = "text-slate-900 font-bold"
+                        bgClass = "bg-blue-50 ring-1 ring-blue-200" // Premium selection
+                        textClass = "text-blue-600 font-bold"
                     }
 
                     return (
@@ -140,28 +154,34 @@ export default function Calendar({ selectedDate, onDateSelect, logs, className }
                                 onClick={() => onDateSelect(date)}
                                 className={cn(
                                     "h-9 w-9 rounded-full flex items-center justify-center text-sm transition-all relative group",
-                                    textClass,
+                                    // textClass, // This is removed
                                     bgClass,
                                     !isSelected && "hover:bg-slate-50"
                                 )}
                             >
-                                <span className={cn("relative z-10", isTodayDate && "text-white")}>{date.getDate()}</span>
+                                <span className={cn(
+                                    "relative z-10 transition-all duration-300",
+                                    isTodayDate ? "text-white font-black" : isSelected ? "text-blue-600 font-bold scale-110" : "text-slate-600"
+                                )}>
+                                    {date.getDate()}
+                                </span>
 
-                                {/* Background Indicators for Today/Taken/Missed */}
+                                {/* Status Badge (Top-Right Subtle & Clean) */}
+                                {!isFutureDate && (status === 'taken' || status === 'missed') && (
+                                    <div className={cn(
+                                        "absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full z-30 border-2 border-white shadow-sm",
+                                        status === 'taken' ? "bg-emerald-500" : "bg-rose-500"
+                                    )} />
+                                )}
+
+                                {/* Today Indicator */}
                                 {isTodayDate && (
-                                    <div className="absolute inset-0 bg-blue-600 rounded-full z-0" />
+                                    <div className="absolute inset-0 bg-blue-600 rounded-full z-0 shadow-lg shadow-blue-200" />
                                 )}
 
-                                {!isTodayDate && !isFutureDate && status === 'taken' && (
-                                    <div className="absolute inset-0 bg-emerald-400/20 rounded-full z-0">
-                                        <div className="absolute inset-0 m-auto h-1.5 w-1.5 rounded-full bg-emerald-500 top-7" />
-                                    </div>
-                                )}
-
-                                {!isTodayDate && !isFutureDate && status === 'missed' && (
-                                    <div className="absolute inset-0 bg-rose-400/20 rounded-full z-0">
-                                        <div className="absolute inset-0 m-auto h-1.5 w-1.5 rounded-full bg-rose-500 top-7" />
-                                    </div>
+                                {/* Selected Background */}
+                                {isSelected && !isTodayDate && (
+                                    <div className="absolute inset-0 bg-blue-50/80 rounded-full z-0 border border-blue-100/50" />
                                 )}
                             </button>
                         </div>
@@ -170,18 +190,18 @@ export default function Calendar({ selectedDate, onDateSelect, logs, className }
             </div>
 
             {/* Legend */}
-            <div className="flex flex-wrap items-center justify-center gap-4 pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-center gap-6 pt-6 border-t border-slate-100 mt-2">
                 <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    <span className="text-sm font-medium text-slate-600">Taken</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Taken</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                    <span className="text-sm font-medium text-slate-600">Missed</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Missed</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />
-                    <span className="text-sm font-medium text-slate-600">Today</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Today</span>
                 </div>
             </div>
         </div>
