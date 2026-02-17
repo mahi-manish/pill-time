@@ -111,7 +111,7 @@ export default function Calendar({ selectedDate, onDateSelect, logs, className }
             </div>
 
             {/* Days Grid */}
-            <div className="grid grid-cols-7 gap-y-6 gap-x-2 mb-8">
+            <div className="grid grid-cols-7 gap-y-1 gap-x-1 mb-2">
                 {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
                     <div key={day} className="text-xs font-medium text-slate-400 text-center">{day}</div>
                 ))}
@@ -170,16 +170,16 @@ export default function Calendar({ selectedDate, onDateSelect, logs, className }
             </div>
 
             {/* Legend */}
-            <div className="space-y-4 pt-6 border-t border-slate-100">
-                <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-4 pt-4 border-t border-slate-100">
+                <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                    <span className="text-sm font-medium text-slate-600">Medication taken</span>
+                    <span className="text-sm font-medium text-slate-600">Taken</span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                    <span className="text-sm font-medium text-slate-600">Missed medication</span>
+                    <span className="text-sm font-medium text-slate-600">Missed</span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />
                     <span className="text-sm font-medium text-slate-600">Today</span>
                 </div>
