@@ -5,7 +5,7 @@ import { Home, Pill } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export default function Layout() {
-    const { session, signOut } = useAuth()
+    const { session, signOut, userRole, updateRole } = useAuth()
     const navigate = useNavigate()
     const location = useLocation()
 
@@ -17,6 +17,11 @@ export default function Layout() {
     const navItems = [
         { icon: Home, label: "Home", path: "/" }
     ]
+
+    const handleRoleSwitch = () => {
+        const newRole = userRole === 'caretaker' ? 'patient' : 'caretaker'
+        updateRole(newRole)
+    }
 
     return (
         <div className="min-h-screen bg-[#F3F7FF] font-sans antialiased text-slate-900 selection:bg-blue-600/10 pb-24 md:pb-0">
@@ -34,44 +39,31 @@ export default function Layout() {
                     </Link>
 
                     <nav className="flex items-center gap-2">
-                        {session ? (
-                            <div className="flex items-center gap-6">
-                                <div className="flex items-center gap-4 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl hover:bg-white transition-all cursor-pointer">
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-slate-800 font-bold text-xs">Primary User</span>
-                                        <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Active System</span>
-                                    </div>
-                                    <div className="h-10 w-10 rounded-lg overflow-hidden border border-slate-200 p-0.5">
-                                        <img className="w-full h-full object-cover rounded-md" src="https://ui-avatars.com/api/?name=User&background=2563EB&color=fff&bold=true" alt="Profile" />
-                                    </div>
-                                </div>
+                        <div className="flex items-center gap-6">
+                            {userRole && (
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => {
-                                        localStorage.removeItem('user_role');
-                                        window.location.href = "/";
-                                    }}
-                                    className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:bg-blue-50 rounded-xl px-4 h-10 transition-all border border-blue-100"
+                                    onClick={handleRoleSwitch}
+                                    className={cn(
+                                        "text-[10px] font-bold font-sans tracking-widest rounded-xl px-4 h-10 transition-all border",
+                                        userRole === 'caretaker'
+                                            ? "text-emerald-600 hover:bg-emerald-50 border-emerald-100"
+                                            : "text-blue-600 hover:bg-blue-50 border-blue-100"
+                                    )}
                                 >
-                                    Switch
+                                    Switch to {userRole === 'caretaker' ? 'Patient' : 'Caretaker'}
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={handleLogout} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl px-4 h-10 transition-all">
-                                    Logout
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-4">
-                                <Link to="/login" className="text-[10px] font-black text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-[0.2em]">
-                                    Sign In
-                                </Link>
-                                <Link to="/signup">
-                                    <Button className="rounded-xl bg-blue-600 hover:bg-blue-700 px-6 h-10 font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-100 active:scale-95 transition-all">
-                                        Join Now
-                                    </Button>
-                                </Link>
-                            </div>
-                        )}
+                            )}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleLogout}
+                                className="text-[10px] font-bold font-sans tracking-widest text-slate-400 border border-slate-200 hover:border-rose-200 hover:text-rose-600 hover:bg-rose-50 rounded-xl px-4 h-10 transition-all"
+                            >
+                                Logout
+                            </Button>
+                        </div>
                     </nav>
                 </div>
             </header>
