@@ -32,6 +32,7 @@ create table medications (
   frequency text default 'Once daily',
   instructions text,
   reminder_time time without time zone not null,
+  target_date date,
   notifications_enabled boolean default true,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

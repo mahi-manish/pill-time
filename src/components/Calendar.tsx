@@ -1,6 +1,6 @@
 
 import { useState, useMemo } from "react"
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay, subMonths, addMonths, subWeeks, addWeeks, startOfWeek, endOfWeek, isFuture, isToday } from "date-fns"
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay, subMonths, addMonths, subWeeks, addWeeks, startOfWeek, endOfWeek, isFuture, isToday, isPast } from "date-fns"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 

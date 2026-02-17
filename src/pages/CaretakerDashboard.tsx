@@ -17,11 +17,12 @@ import {
     Bell,
     BellRing,
     Mail,
+    Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import Calendar from "@/components/Calendar";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -52,6 +53,7 @@ export default function CaretakerDashboard() {
     const [medDosage, setMedDosage] = useState("");
     const [medTime, setMedTime] = useState("08:00");
     const [medInstructions, setMedInstructions] = useState("");
+    const [medDate, setMedDate] = useState(format(new Date(), "yyyy-MM-dd"));
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Tab State
@@ -64,7 +66,6 @@ export default function CaretakerDashboard() {
     const [alertDelay, setAlertDelay] = useState("2 hours");
     const [dailyReminderTime, setDailyReminderTime] = useState("20:00");
     const [isSavingSettings, setIsSavingSettings] = useState(false);
-
     const targetUserId = session?.user?.id;
 
     // Fetch Profile for settings
@@ -135,24 +136,88 @@ export default function CaretakerDashboard() {
         enabled: !!targetUserId
     })
 
-    const stats = useMemo(() => {
-        const medsTodayCount = medications?.length || 0
-        const dosesTakenToday = currentLogs?.filter(l => l.taken).length || 0
-        const totalPossible = (allLogs?.length || 0) || 1
-        const totalTaken = (allLogs?.filter(l => l.taken).length || 0)
-        const rate = Math.round((totalTaken / totalPossible) * 100)
+    const filteredMedications = useMemo(() => {
+        if (!medications) return [];
+        const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+        return medications.filter(med => {
+            // @ts-ignore
+            if (!med.target_date) return true;
+            // @ts-ignore
+            return med.target_date === selectedDateStr;
+        });
+    }, [medications, selectedDate]);
 
-        // Calculate current streak with 100% adherence backwards from today
-        const streak = 15;
+    const todayMedications = useMemo(() => {
+        if (!medications) return [];
+        const todayStr = format(new Date(), "yyyy-MM-dd");
+        return medications.filter(med => {
+            // @ts-ignore
+            if (!med.target_date) return true;
+            // @ts-ignore
+            return med.target_date === todayStr;
+        });
+    }, [medications]);
+
+    const stats = useMemo(() => {
+        // Stats for "Today" (Actual current date)
+        const todayStr = format(new Date(), "yyyy-MM-dd");
+        const medsTodayCount = todayMedications.length;
+        const dosesTakenToday = allLogs?.filter(l => l.date === todayStr && l.taken).length || 0;
+
+        let totalScheduledPast = 0;
+        let totalTakenPast = 0;
+        let calculatedStreak = 0;
+        let streakBroken = false;
+
+        const safeMedications = medications || [];
+        const safeAllLogs = allLogs || [];
+
+        if (safeMedications.length > 0) {
+            // Check from today (i=0) backwards
+            for (let i = 0; i <= 365; i++) {
+                const checkDate = subDays(new Date(), i);
+                const dateStr = format(checkDate, "yyyy-MM-dd");
+
+                const medsForDay = safeMedications.filter(med => {
+                    // @ts-ignore
+                    if (!med.target_date) return true;
+                    // @ts-ignore
+                    return med.target_date === dateStr;
+                });
+
+                if (medsForDay.length > 0) {
+                    const dayLogs = safeAllLogs.filter(l => l.date === dateStr && l.taken);
+                    const dayTakenCount = dayLogs.length;
+
+                    // Streak logic: must take ALL scheduled meds
+                    if (!streakBroken) {
+                        if (dayTakenCount >= medsForDay.length) {
+                            calculatedStreak++;
+                        } else if (i > 0) { // Streak breaks if a past day is incomplete
+                            streakBroken = true;
+                        }
+                        // If i === 0 (today) and not all meds are taken, streak doesn't break yet
+                        // as the day might not be over.
+                    }
+
+                    // Adherence (Last 30 days)
+                    if (i < 30) { // Changed from i <= 30 to i < 30 to get exactly 30 days (0-29)
+                        totalScheduledPast += medsForDay.length;
+                        totalTakenPast += Math.min(dayTakenCount, medsForDay.length);
+                    }
+                }
+            }
+        }
+
+        const rate = totalScheduledPast > 0 ? Math.round((totalTakenPast / totalScheduledPast) * 100) : 0;
 
         return {
             today: medsTodayCount,
             taken: dosesTakenToday,
-            missed: Math.max(0, medsTodayCount - dosesTakenToday),
-            rate: rate || 0,
-            streak
+            rate: rate,
+            streak: calculatedStreak
         }
-    }, [medications, currentLogs, allLogs])
+    }, [todayMedications, allLogs, medications])
 
     const getGreeting = () => {
         const hour = new Date().getHours()
@@ -170,6 +235,7 @@ export default function CaretakerDashboard() {
     }
 
     const isTaken = (medId: string) => currentLogs?.some((log) => log.medication_id === medId && log.taken)
+
 
     const addMedicationMutation = useMutation({
         mutationFn: async (newMed: any) => {
@@ -211,8 +277,32 @@ export default function CaretakerDashboard() {
             dosage: medDosage || "1 Tablet",
             reminder_time: medTime,
             instructions: medInstructions,
-            frequency: "Daily"
+            target_date: medDate || null,
+            frequency: medDate ? "Once" : "Daily"
         });
+    };
+
+    const deleteMedicationMutation = useMutation({
+        mutationFn: async (medId: string) => {
+            const { error } = await supabase
+                .from("medications")
+                .delete()
+                .eq("id", medId);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["medications", targetUserId] });
+        },
+        onError: (error: any) => {
+            console.error("Error deleting medication:", error);
+            alert("Failed to delete medication: " + error.message);
+        }
+    });
+
+    const handleDeleteMedication = (id: string) => {
+        if (confirm("Are you sure you want to delete this medication?")) {
+            deleteMedicationMutation.mutate(id);
+        }
     };
 
     const updateSettingsMutation = useMutation({
@@ -266,7 +356,7 @@ export default function CaretakerDashboard() {
                         {/* Today's Dosage */}
                         <div className="space-y-2">
                             <p className="text-sm font-medium text-slate-500">Today's Dosage:</p>
-                            <div className="text-3xl font-bold text-slate-700">2/3</div>
+                            <div className="text-3xl font-bold text-slate-700">{stats.taken}/{stats.today}</div>
                         </div>
 
                         {/* Adherence Rate */}
@@ -304,7 +394,7 @@ export default function CaretakerDashboard() {
                         </div>
                     </div>
                     <div className="divide-y divide-slate-100">
-                        {medications?.map((med) => {
+                        {filteredMedications?.map((med) => {
                             const taken = isTaken(med.id)
                             const style = getMedIcon(med.reminder_time)
                             return (
@@ -321,7 +411,13 @@ export default function CaretakerDashboard() {
                                             <p className="text-xs font-medium text-slate-400 mt-0.5">{med.dosage} • {med.instructions || 'Take as prescribed'}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center">
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => handleDeleteMedication(med.id)}
+                                            className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all border border-slate-100"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                         <div className={cn(
                                             "h-10 w-10 flex items-center justify-center rounded-full transition-all shadow-sm",
                                             taken ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-300"
@@ -332,8 +428,8 @@ export default function CaretakerDashboard() {
                                 </div>
                             )
                         })}
-                        {medications?.length === 0 && (
-                            <div className="py-20 text-center text-slate-300 font-bold uppercase tracking-widest text-xs">No medications scheduled</div>
+                        {filteredMedications?.length === 0 && (
+                            <div className="py-20 text-center text-slate-300 font-bold tracking-widest text-xs">No medications scheduled</div>
                         )}
                     </div>
                 </div>
@@ -357,7 +453,7 @@ export default function CaretakerDashboard() {
                         <button
                             onClick={() => setActiveTab("schedule")}
                             className={cn(
-                                "px-6 h-full font-bold text-xs tracking-wider uppercase transition-all",
+                                "px-6 h-full font-bold text-xs tracking-wider transition-all",
                                 activeTab === "schedule" ? "bg-[#2563eb] text-white" : "bg-transparent text-slate-400 hover:text-slate-600"
                             )}
                         >
@@ -366,7 +462,7 @@ export default function CaretakerDashboard() {
                         <button
                             onClick={() => setActiveTab("settings")}
                             className={cn(
-                                "px-6 h-full font-bold text-xs tracking-wider uppercase transition-all border-r border-slate-100",
+                                "px-6 h-full font-bold text-xs tracking-wider transition-all border-r border-slate-100",
                                 activeTab === "settings" ? "bg-[#2563eb] text-white" : "bg-white text-slate-400 hover:text-slate-600"
                             )}
                         >
@@ -381,12 +477,12 @@ export default function CaretakerDashboard() {
                                     <span className="h-6 w-1 bg-blue-500 rounded-full"></span>
                                     New Notification
                                 </h2>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg border border-slate-100">Personal Schedule</span>
+                                <span className="text-[10px] font-bold text-slate-400 tracking-widest bg-slate-50 px-3 py-1 rounded-lg border border-slate-100">Personal Schedule</span>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <label className="text-[10px] font-black text-slate-400 tracking-widest flex items-center gap-2">
                                         <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Medication Name
                                     </label>
                                     <Input
@@ -398,7 +494,24 @@ export default function CaretakerDashboard() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <label className="text-[10px] font-black text-slate-400 tracking-widest flex items-center gap-2">
+                                        <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Target Date
+                                    </label>
+                                    <div className="relative group">
+                                        <Input
+                                            type="date"
+                                            value={medDate}
+                                            onChange={(e) => setMedDate(e.target.value)}
+                                            min={format(new Date(), "yyyy-MM-dd")}
+                                            className="h-11 border-slate-100 bg-slate-50/50 rounded-xl pl-10 focus:ring-blue-500/20 transition-all font-medium text-slate-700 shadow-none hover:border-slate-200"
+                                        />
+                                        <CalendarIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                                    </div>
+                                    <p className="text-[9px] text-slate-400 font-medium">Leave empty for Daily</p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 tracking-widest flex items-center gap-2">
                                         <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Reminder Time
                                     </label>
                                     <div className="relative group">
@@ -413,7 +526,7 @@ export default function CaretakerDashboard() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <label className="text-[10px] font-black text-slate-400 tracking-widest flex items-center gap-2">
                                         <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Dosage
                                     </label>
                                     <div className="relative group">
@@ -429,7 +542,7 @@ export default function CaretakerDashboard() {
                             </div>
 
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <label className="text-[10px] font-black text-slate-400 tracking-widest flex items-center gap-2">
                                     <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Instructions / Note
                                 </label>
 
@@ -460,29 +573,12 @@ export default function CaretakerDashboard() {
                                     disabled={isSubmitting}
                                     className="h-11 px-8 bg-[#55a075] hover:bg-[#448b63] text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-500/10 transition-all active:scale-[0.98]"
                                 >
-                                    {isSubmitting ? "Saving..." : "Save Notification"}
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => {
-                                        setMedName("");
-                                        setMedDosage("");
-                                        setMedInstructions("");
-                                    }}
-                                    className="h-11 px-8 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl font-bold text-sm border-slate-200 transition-all active:scale-[0.98] shadow-none"
-                                >
-                                    Clear
+                                    {isSubmitting ? "Saving..." : "Add Schedule"}
                                 </Button>
                             </div>
                         </div>
                     ) : (
                         <div className="p-6 md:p-8 space-y-8">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-blue-50 rounded-lg">
-                                    <BellRing className="w-5 h-5 text-blue-500" />
-                                </div>
-                                <h2 className="text-xl font-bold text-slate-800 tracking-tight">Notification Preferences</h2>
-                            </div>
 
                             <div className="space-y-6">
                                 {/* Email Notifications Toggle */}
@@ -512,7 +608,7 @@ export default function CaretakerDashboard() {
                                     </div>
 
                                     <div className="bg-white rounded-xl p-4 border border-slate-100 space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email Address</label>
+                                        <label className="text-[10px] font-black text-slate-400 tracking-widest">Email Address</label>
                                         <div className="relative">
                                             <Input
                                                 value={caretakerEmail}
@@ -553,7 +649,7 @@ export default function CaretakerDashboard() {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Alert Delay</label>
+                                            <label className="text-[10px] font-black text-slate-400 tracking-widest">Alert Delay</label>
                                             <div className="relative">
                                                 <select
                                                     value={alertDelay}
@@ -568,7 +664,7 @@ export default function CaretakerDashboard() {
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Daily reminder time</label>
+                                            <label className="text-[10px] font-black text-slate-400 tracking-widest">Daily reminder time</label>
                                             <div className="relative">
                                                 <Input
                                                     type="time"
