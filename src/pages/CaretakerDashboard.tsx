@@ -15,7 +15,6 @@ import {
     ChevronRight,
     Pill,
     Bell,
-    BellRing,
     Mail,
     Trash2,
 } from "lucide-react";
@@ -53,7 +52,7 @@ export default function CaretakerDashboard() {
     const [medDosage, setMedDosage] = useState("");
     const [medTime, setMedTime] = useState("08:00");
     const [medInstructions, setMedInstructions] = useState("");
-    const [medDate, setMedDate] = useState(format(new Date(), "yyyy-MM-dd"));
+    const [selectedDates, setSelectedDates] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Tab State
@@ -241,7 +240,7 @@ export default function CaretakerDashboard() {
         mutationFn: async (newMed: any) => {
             const { data, error } = await supabase
                 .from("medications")
-                .insert([newMed])
+                .insert(newMed)
                 .select();
             if (error) throw error;
             return data;
@@ -251,6 +250,7 @@ export default function CaretakerDashboard() {
             setMedName("");
             setMedDosage("");
             setMedInstructions("");
+            setSelectedDates([]);
             setIsSubmitting(false);
         },
         onError: (error: any) => {
@@ -271,15 +271,28 @@ export default function CaretakerDashboard() {
         }
 
         setIsSubmitting(true);
-        addMedicationMutation.mutate({
-            user_id: targetUserId,
-            name: medName,
-            dosage: medDosage || "1 Tablet",
-            reminder_time: medTime,
-            instructions: medInstructions,
-            target_date: medDate || null,
-            frequency: medDate ? "Once" : "Daily"
-        });
+
+        const newMedications = selectedDates.length > 0 
+            ? selectedDates.map(date => ({
+                user_id: targetUserId,
+                name: medName,
+                dosage: medDosage || "1 Tablet",
+                reminder_time: medTime,
+                instructions: medInstructions,
+                target_date: date,
+                frequency: "Once"
+            }))
+            : {
+                user_id: targetUserId,
+                name: medName,
+                dosage: medDosage || "1 Tablet",
+                reminder_time: medTime,
+                instructions: medInstructions,
+                target_date: null,
+                frequency: "Daily"
+            };
+
+        addMedicationMutation.mutate(newMedications);
     };
 
     const deleteMedicationMutation = useMutation({
@@ -349,8 +362,8 @@ export default function CaretakerDashboard() {
                     </div>
                 </div>
                 {/* Right Side: Useful Stats Card */}
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4">
-                    <div className="flex items-start justify-between gap-8">
+                <div className="bg-[#b0e0e6] rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4">
+                    <div className="flex items-start justify-between gap-10">
                         {/* Today's Dosage */}
                         <div className="space-y-2">
                             <p className="text-sm font-medium text-slate-500">Today's Dosage:</p>
@@ -389,8 +402,8 @@ export default function CaretakerDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Left Side: Medication Schedule */}
-                <div className="realistic-card p-0 overflow-hidden bg-white h-fit">
-                    <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white">
+                <div className="bg-white rounded-3xl p-0 shadow-sm hover:shadow-md overflow-hidden h-fit">
+                    <div className="p-8 flex items-center justify-between bg-white">
                         <div>
                             <h2 className="text-xl font-bold text-slate-800 tracking-tight">Medication Schedule</h2>
                             <p className="text-xs font-medium text-slate-400 mt-1 tracking-widest">{format(selectedDate, "EEEE, MMMM dd, yyyy")}</p>
@@ -408,7 +421,7 @@ export default function CaretakerDashboard() {
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-3">
-                                                <span className="text-xs font-bold text-blue-400 font-sans">{med.reminder_time}</span>
+                                                <span className="text-xs font-bold text-blue-400 font-sans">{med.reminder_time.slice(0, 5)}</span>
                                                 <h3 className="text-lg font-bold text-slate-800">{med.name}</h3>
                                             </div>
                                             <p className="text-xs font-medium text-slate-400 mt-0.5">{med.dosage} • {med.instructions || 'Take as prescribed'}</p>
@@ -448,10 +461,10 @@ export default function CaretakerDashboard() {
                 </div>
             </div>
 
-            {/* New Medication Schedule Form Section - Refined & Compact */}
+            {/* New Medication Schedule Form Section */}
             <div className="mt-4 animate-slide-up delay-200">
                 <div className="realistic-card p-0 overflow-hidden bg-white max-w-[900px]">
-                    {/* Tabs - More Compact */}
+                    {/* Tabs */}
                     <div className="flex bg-slate-50 border-b border-slate-100 h-11">
                         <button
                             onClick={() => setActiveTab("schedule")}
@@ -497,19 +510,40 @@ export default function CaretakerDashboard() {
 
                                 <div className="space-y-2">
                                     <label className="text-xs font-medium text-slate-400 mt-0.5 flex items-center gap-2">
-                                        <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Target Date
+                                        <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Target Dates
                                     </label>
                                     <div className="relative group">
-                                        <Input
-                                            type="date"
-                                            value={medDate}
-                                            onChange={(e) => setMedDate(e.target.value)}
-                                            min={format(new Date(), "yyyy-MM-dd")}
-                                            className="h-11 border-slate-100 bg-slate-50/50 rounded-xl pl-10 focus:ring-blue-500/20 transition-all font-medium text-slate-700 shadow-none hover:border-slate-200"
-                                        />
-                                        <CalendarIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                                        <div className="min-h-[44px] border-slate-300 bg-slate-50/50 rounded-xl px-3 py-2 flex flex-wrap gap-2 items-center focus-within:ring-2 focus-within:ring-blue-500/20 transition-all font-medium text-slate-700 shadow-none hover:border-slate-400">
+                                            {selectedDates.map(date => (
+                                                <div key={date} className="h-7 bg-blue-100/50 text-blue-600 rounded-lg pl-2 pr-1 flex items-center gap-1 text-xs font-bold animate-in fade-in zoom-in duration-200">
+                                                    {format(new Date(date), "MMM dd")}
+                                                    <button
+                                                        onClick={() => setSelectedDates(prev => prev.filter(d => d !== date))}
+                                                        className="h-5 w-5 hover:bg-white/50 rounded-md flex items-center justify-center transition-colors"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <input
+                                                type="date"
+                                                min={format(new Date(), "yyyy-MM-dd")}
+                                                className="bg-transparent border-none outline-none text-sm h-7 w-auto min-w-[20px] p-0 text-slate-700 font-medium cursor-pointer"
+                                                onChange={(e) => {
+                                                    if (e.target.value) {
+                                                        const newDate = e.target.value;
+                                                        if (!selectedDates.includes(newDate)) {
+                                                            setSelectedDates(prev => [...prev, newDate].sort());
+                                                        }
+                                                        e.target.value = ""; // Reset input
+                                                    }
+                                                }}
+                                            />
+                                        </div>
                                     </div>
-                                    <p className="text-[9px] text-slate-400 font-medium">Leave empty for Daily</p>
+                                    <p className="text-[10px] text-slate-400 font-medium pl-1">
+                                        {selectedDates.length > 0 ? `${selectedDates.length} days selected` : "You can select multiple dates"}
+                                    </p>
                                 </div>
 
                                 <div className="space-y-2">
@@ -562,7 +596,7 @@ export default function CaretakerDashboard() {
                                         <Input
                                             value={medInstructions}
                                             onChange={(e) => setMedInstructions(e.target.value)}
-                                            placeholder="Instructions (e.g. Take after meal)"
+                                            placeholder="e.g. Take after meal"
                                             className="h-11 border-slate-100 bg-slate-50/50 rounded-xl px-4 focus:ring-blue-500/20 transition-all font-bold text-slate-600 shadow-none hover:border-slate-200"
                                         />
                                     </div>

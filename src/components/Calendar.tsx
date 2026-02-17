@@ -19,7 +19,7 @@ interface CalendarProps {
 }
 
 export default function Calendar({ selectedDate, onDateSelect, logs, medications, className }: CalendarProps) {
-    const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('monthly')
+    const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly')
     const [currentDate, setCurrentDate] = useState(new Date())
 
     const handlePrevious = () => {
@@ -192,15 +192,15 @@ export default function Calendar({ selectedDate, onDateSelect, logs, medications
             {/* Legend */}
             <div className="flex items-center justify-center gap-6 pt-6 border-t border-slate-100 mt-2">
                 <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Taken</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                    <div className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Missed</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]" />
+                    <div className="w-2 h-2 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]" />
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Today</span>
                 </div>
             </div>

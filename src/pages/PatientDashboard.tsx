@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from "react"
-import { format, subDays, isPast, isToday, isFuture } from "date-fns"
+import { format, subDays, isPast, isToday } from "date-fns"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
@@ -7,7 +7,7 @@ import Calendar from "@/components/Calendar"
 import {
     Flame,
     Check,
-    Clock,
+    X,
     Upload as UploadIcon,
     Sun,
     CloudIcon,
@@ -15,8 +15,6 @@ import {
     Bed,
     Camera,
     Heart,
-    Droplets,
-    Phone,
     Zap,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -219,8 +217,7 @@ export default function PatientDashboard() {
         }
 
         try {
-            // In a real app, we'd upload to Supabase Storage here.
-            // For now, we'll simulate the success and clear the state.
+            // simulate the success and clear the state.
             alert("Verification photo logged successfully!");
             setPreviewImage(null);
             if (fileInputRef.current) fileInputRef.current.value = "";
@@ -254,7 +251,7 @@ export default function PatientDashboard() {
                     </div>
                 </div>
                 {/* Right Side: Useful Stats Card */}
-                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4">
+                <div className="bg-[#e6e6fa] rounded-3xl p-6 shadow-sm border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4">
                     <div className="flex items-start justify-between gap-8">
                         {/* Today's Dosage */}
                         <div className="space-y-2">
@@ -290,7 +287,6 @@ export default function PatientDashboard() {
             {/* Middle Section: Schedule + Upload */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Schedule Table */}
-                {/* Schedule Table */}
                 <div className="lg:col-span-7 bg-white border border-slate-100 rounded-[32px] p-0 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="p-8 flex items-center justify-between bg-white">
                         <div>
@@ -319,30 +315,36 @@ export default function PatientDashboard() {
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-3">
-                                                <span className="text-xs font-bold text-blue-400 font-sans">{med.reminder_time}</span>
+                                                <span className="text-xs font-bold text-blue-400 font-sans">{med.reminder_time.slice(0, 5)}</span>
                                                 <h3 className="text-lg font-bold text-slate-800">{med.name}</h3>
                                             </div>
                                             <p className="text-xs font-medium text-slate-400 mt-0.5">{med.dosage} • {med.instructions || 'Take as prescribed'}</p>
                                         </div>
                                     </div>
-                                    <label className="flex items-center gap-3 cursor-pointer group/check select-none">
-                                        <span className={cn(
-                                            "text-sm font-medium transition-colors",
-                                            taken ? "text-slate-700" : "text-slate-400 group-hover/check:text-slate-600"
-                                        )}>Taken</span>
+                                    <div
+                                        onClick={() => {
+                                            if (isToday(selectedDate)) {
+                                                toggleTaken.mutate({ medId: med.id, taken: !taken })
+                                            }
+                                        }}
+                                        className={cn(
+                                            "flex bg-slate-100 rounded-full p-1 cursor-pointer transition-all select-none shadow-inner",
+                                            !isToday(selectedDate) && "opacity-50 pointer-events-none grayscale"
+                                        )}
+                                    >
                                         <div className={cn(
-                                            "h-6 w-6 flex items-center justify-center rounded-full transition-all shadow-sm",
-                                            taken ? "bg-emerald-500 text-white" : "bg-slate-200 text-white group-hover/check:bg-slate-300"
+                                            "px-4 py-1.5 rounded-full text-[10px] font-bold transition-all tracking-wider flex items-center gap-2",
+                                            !taken ? "bg-slate-400 text-white shadow-sm" : "text-slate-400 hover:text-slate-600"
                                         )}>
-                                            <Check className="w-4 h-4 stroke-[3]" />
+                                            {!taken && <X className="w-3 h-3" />} Not Taken
                                         </div>
-                                        <input
-                                            type="checkbox"
-                                            checked={taken}
-                                            onChange={(e) => toggleTaken.mutate({ medId: med.id, taken: e.target.checked })}
-                                            className="hidden"
-                                        />
-                                    </label>
+                                        <div className={cn(
+                                            "px-4 py-1.5 rounded-full text-[10px] font-bold transition-all tracking-wider flex items-center gap-2",
+                                            taken ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400 hover:text-slate-600"
+                                        )}>
+                                            {taken && <Check className="w-3 h-3 stroke-[3]" />} Taken
+                                        </div>
+                                    </div>
                                 </div>
                             )
                         })}
@@ -352,14 +354,14 @@ export default function PatientDashboard() {
                     </div>
                 </div>
 
-                {/* Upload Section (Intake Log) */}
+                {/* Upload Section */}
                 <div className="lg:col-span-5 bg-white border border-slate-100 rounded-[32px] p-10 flex flex-col gap-8 shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="space-y-2">
                         <h2 className="text-xl font-bold text-slate-800 flex items-center gap-3 tracking-tight">
                             <div className="p-2 bg-blue-50 rounded-xl">
                                 <Camera className="w-5 h-5 text-blue-500" />
                             </div>
-                            Intake Log
+                            Upload Proof <span className="text-xs font-medium text-slate-500 tracking-wide">(Optional)</span>
                         </h2>
                         <p className="text-xs font-medium text-slate-400 tracking-wide">Visual verification for your daily records</p>
                     </div>
@@ -377,7 +379,7 @@ export default function PatientDashboard() {
                                 </div>
                                 <div className="text-center space-y-1">
                                     <p className="text-xs font-bold text-slate-600">Take a photo</p>
-                                    <p className="text-[10px] font-medium text-slate-400 px-4 leading-relaxed">Capture a clear image of your medication before taking it</p>
+                                    <p className="text-[10px] font-medium text-slate-400 px-4 leading-relaxed">Capture a clear image of your medication as confirmation</p>
                                 </div>
                             </div>
                         )}
