@@ -164,7 +164,7 @@ export default function PatientDashboard() {
                         {session?.user?.user_metadata?.full_name || 'User'}
                     </h1>
                     <div className="flex items-center gap-2 pt-1">
-                        <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-bold tracking-wider">
+                        <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-bold tracking-wider">
                             Patient
                         </span>
                     </div>
@@ -206,14 +206,14 @@ export default function PatientDashboard() {
             {/* Middle Section: Schedule + Upload */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Schedule Table */}
-                <div className="lg:col-span-8 realistic-card p-0 overflow-hidden bg-white">
+                <div className="lg:col-span-7 realistic-card p-0 overflow-hidden bg-white">
                     <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white">
                         <div>
-                            <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Medication Schedule</h2>
-                            <p className="text-xs font-bold text-slate-400 mt-1 tracking-widest">{format(selectedDate, "EEEE, MMMM dd, yyyy")}</p>
+                            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Medication Schedule</h2>
+                            <p className="text-xs font-medium text-slate-400 mt-1 tracking-widest">{format(selectedDate, "EEEE, MMMM dd, yyyy")}</p>
                         </div>
                         <div className="flex gap-2">
-                            <div className="h-10 px-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center text-[10px] font-black text-slate-400 tracking-widest">Active Routine</div>
+                            <div className="h-8 px-3 bg-slate-50 border border-slate-100 rounded-lg flex items-center text-[10px] font-bold text-slate-400 tracking-wider uppercase">Active Routine</div>
                         </div>
                     </div>
                     <div className="divide-y divide-slate-100">
@@ -221,47 +221,48 @@ export default function PatientDashboard() {
                             const taken = isTaken(med.id)
                             const style = getMedIcon(med.reminder_time)
                             return (
-                                <div key={med.id} className="p-8 flex items-center justify-between hover:bg-slate-50/20 transition-all group">
-                                    <div className="flex items-center gap-8">
-                                        <div className={cn("h-14 w-14 flex items-center justify-center rounded-2xl border border-slate-50 shadow-sm transition-transform group-hover:scale-105", style.bg, style.color)}>
+                                <div key={med.id} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all">
+                                    <div className="flex items-center gap-6">
+                                        <div className={cn("h-12 w-12 flex items-center justify-center rounded-xl border border-slate-50 shadow-sm", style.bg, style.color)}>
                                             {style.icon}
                                         </div>
                                         <div>
-                                            <div className="flex items-center gap-4">
-                                                <span className="text-xs font-black text-blue-400 font-sans tracking-widest">{med.reminder_time}</span>
-                                                <h3 className="text-xl font-bold text-slate-800">{med.name}</h3>
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-xs font-bold text-blue-400 font-sans">{med.reminder_time}</span>
+                                                <h3 className="text-lg font-bold text-slate-800">{med.name}</h3>
                                             </div>
-                                            <p className="text-sm font-medium text-slate-400 mt-1">{med.dosage} • {med.instructions || 'Daily'}</p>
+                                            <p className="text-xs font-medium text-slate-400 mt-0.5">{med.dosage} • {med.instructions || 'Take as prescribed'}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-8">
-                                        <label className="flex items-center gap-4 cursor-pointer group/check">
-                                            <input
-                                                type="checkbox"
-                                                checked={taken}
-                                                onChange={(e) => toggleTaken.mutate({ medId: med.id, taken: e.target.checked })}
-                                                className="h-7 w-7 rounded-xl border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer shadow-sm"
-                                            />
-                                            <span className="text-[10px] font-black text-slate-400 group-hover/check:text-slate-800 transition-colors tracking-[0.2em] pt-0.5">Taken</span>
-                                        </label>
+                                    <label className="flex items-center gap-3 cursor-pointer group/check select-none">
+                                        <span className={cn(
+                                            "text-sm font-medium transition-colors",
+                                            taken ? "text-slate-700" : "text-slate-400 group-hover/check:text-slate-600"
+                                        )}>Taken</span>
                                         <div className={cn(
-                                            "h-12 w-12 flex items-center justify-center rounded-2xl transition-all duration-500 shadow-sm",
-                                            taken ? "bg-emerald-500 text-white shadow-emerald-100" : "bg-slate-50 text-slate-200"
+                                            "h-6 w-6 flex items-center justify-center rounded-full transition-all shadow-sm",
+                                            taken ? "bg-emerald-500 text-white" : "bg-slate-200 text-white group-hover/check:bg-slate-300"
                                         )}>
-                                            {taken ? <Check className="w-7 h-7 stroke-[3]" /> : <Clock className="w-6 h-6 rotate-container group-hover:rotate-12 transition-transform" />}
+                                            <Check className="w-4 h-4 stroke-[3]" />
                                         </div>
-                                    </div>
+                                        <input
+                                            type="checkbox"
+                                            checked={taken}
+                                            onChange={(e) => toggleTaken.mutate({ medId: med.id, taken: e.target.checked })}
+                                            className="hidden"
+                                        />
+                                    </label>
                                 </div>
                             )
                         })}
                         {medications?.length === 0 && (
-                            <div className="py-24 text-center text-slate-300 font-black tracking-[0.3em] text-[10px]">No medical entries on this date</div>
+                            <div className="py-20 text-center text-slate-400 tracking-widest text-xs">No medical entries on this date</div>
                         )}
                     </div>
                 </div>
 
                 {/* Upload Section */}
-                <div className="lg:col-span-4 realistic-card p-10 flex flex-col gap-8 bg-white">
+                <div className="lg:col-span-5 realistic-card p-10 flex flex-col gap-8 bg-white">
                     <div className="space-y-2">
                         <h2 className="text-xl font-black text-slate-800 flex items-center gap-3">
                             <Camera className="w-6 h-6 text-blue-600" /> Intake Log

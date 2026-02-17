@@ -432,7 +432,7 @@ export default function CaretakerDashboard() {
                             )
                         })}
                         {filteredMedications?.length === 0 && (
-                            <div className="py-20 text-center text-slate-300 font-bold tracking-widest text-xs">No medications scheduled</div>
+                            <div className="py-20 text-center text-slate-400 tracking-widest text-xs">No medications scheduled</div>
                         )}
                     </div>
                 </div>

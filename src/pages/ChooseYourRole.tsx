@@ -6,9 +6,9 @@ interface ChooseYourRoleProps {
 
 export default function ChooseYourRole({ onRoleSelect }: ChooseYourRoleProps) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] w-full py-2 font-sans overflow-hidden bg-white">
-            <div className="max-w-4xl w-full text-center space-y-1 mb-4 animate-fade-in px-4">
-                <h2 className="text-slate-900 text-2xl md:text-3xl font-black tracking-tight uppercase">Choose Your Role</h2>
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-150px)] w-full pt-4 font-sans overflow-hidden bg-white">
+            <div className="max-w-4xl w-full text-center space-y-1 mt-2 animate-fade-in px-4">
+                <h2 className="text-slate-900 text-2xl md:text-3xl font-black tracking-tight">Choose Your Role</h2>
                 <div className="h-1 w-12 bg-blue-600 mx-auto rounded-full" />
                 <p className="text-slate-500 font-bold uppercase tracking-widest text-[8px]">Select your identity to continue</p>
             </div>
