@@ -70,6 +70,10 @@ export default function Layout() {
 
             <main className="container mx-auto pb-20 px-6 max-w-[1000px]">
                 <Outlet />
+
+                <div className="text-center pt-5 opacity-50">
+                    <p className="text-[10px] font-black tracking-[0.15em]">Pill Time • v1.0.0 • Crafted for Medical Precision</p>
+                </div>
             </main>
 
             {/* Floating Bottom Nav for Mobile */}

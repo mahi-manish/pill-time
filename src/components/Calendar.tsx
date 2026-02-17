@@ -70,7 +70,7 @@ export default function Calendar({ selectedDate, onDateSelect, logs, className }
     return (
         <div className={cn("bg-white rounded-3xl p-8 shadow-sm border border-slate-100 w-full max-w-md mx-auto font-sans", className)}>
             <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl font-bold text-slate-800 tracking-tight">Medication Calendar</h2>
+                <h2 className="text-xl font-bold text-slate-800 tracking-tight">Calendar View</h2>
 
                 {/* View Mode Toggle - Subtle and Compact */}
                 <div className="flex bg-slate-50 p-1 rounded-lg border border-slate-100">

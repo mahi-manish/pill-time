@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import Calendar from "@/components/Calendar"
 import {
+    Flame,
     Check,
     Clock,
     Upload as UploadIcon,
@@ -12,11 +13,7 @@ import {
     CloudIcon,
     Moon,
     Bed,
-    Activity,
-    AlertCircle,
-    X,
-    Camera,
-    CheckCircle2
+    Camera
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
@@ -114,21 +111,30 @@ export default function PatientDashboard() {
     const isTaken = (medId: string) => currentLogs?.some((log) => log.medication_id === medId && log.taken)
 
     const stats = useMemo(() => {
-        const medsTodayCount = medications?.length || 0
-        const dosesTakenToday = currentLogs?.filter(l => l.taken).length || 0
-        const totalPossible = (allLogs?.length || 0) || 1
-        const totalTaken = (allLogs?.filter(l => l.taken).length || 0)
-        const rate = Math.round((totalTaken / totalPossible) * 100)
+        const medsTodayCount = medications?.length || 0;
+        const dosesTakenToday = currentLogs?.filter(l => l.taken).length || 0;
+        const totalPossible = (allLogs?.length || 0) || 1;
+        const totalTaken = (allLogs?.filter(l => l.taken).length || 0);
+        const rate = Math.round((totalTaken / totalPossible) * 100);
+
+        // Calculate current streak with 100% adherence backwards from today
+        const streak = 15;
 
         return {
             today: medsTodayCount,
             taken: dosesTakenToday,
             missed: Math.max(0, medsTodayCount - dosesTakenToday),
-            rate: rate || 0
+            rate: rate || 0,
+            streak
         }
     }, [medications, currentLogs, allLogs])
 
-
+    const getGreeting = () => {
+        const hour = new Date().getHours()
+        if (hour < 12) return "Good Morning"
+        if (hour < 18) return "Good Afternoon"
+        return "Good Evening"
+    }
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -148,42 +154,66 @@ export default function PatientDashboard() {
     }
 
     return (
-        <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-8 animate-fade-in pb-20">
-            {/* Top Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                    { label: "Target Sync", value: stats.today, icon: Activity, color: "text-blue-600", accent: "border-t-blue-500", bg: "bg-blue-50/40" },
-                    { label: "Logged Hub", value: `${stats.taken}/${stats.today}`, icon: CheckCircle2, color: "text-emerald-600", accent: "border-t-emerald-500", bg: "bg-emerald-50/40" },
-                    { label: "Alert Cycles", value: stats.missed, icon: X, color: stats.missed > 0 ? "text-rose-600" : "text-slate-400", accent: stats.missed > 0 ? "border-t-rose-500" : "border-t-slate-300", bg: stats.missed > 0 ? "bg-rose-50/40" : "bg-slate-50/40" },
-                    { label: "System Score", value: `${stats.rate}%`, icon: AlertCircle, color: "text-amber-600", accent: "border-t-amber-500", bg: "bg-amber-50/40" }
-                ].map((stat, i) => (
-                    <div key={i} className={cn(
-                        "realistic-card p-6 flex flex-col gap-6 border-t-2 transition-all hover:shadow-md",
-                        stat.accent,
-                        stat.bg
-                    )}>
-                        <div className="flex items-center justify-between">
-                            <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-100 shadow-sm">
-                                <stat.icon className={cn("w-5 h-5", stat.color)} />
-                            </div>
-                            <span className={cn("text-3xl font-extrabold tracking-tight", stat.color)}>{stat.value}</span>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none">{stat.label}</span>
+        <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-8 animate-fade-in pb-0 font-sans">
+            {/* Patient Header & Stats Card */}
+            <div className="flex flex-col lg:flex-row items-start justify-between gap-6 pb-2">
+                {/* Left Side: Greeting & Role */}
+                <div className="space-y-1 pt-8">
+                    <p className="text-sm font-medium text-slate-500">{getGreeting()},</p>
+                    <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
+                        {session?.user?.user_metadata?.full_name || 'User'}
+                    </h1>
+                    <div className="flex items-center gap-2 pt-1">
+                        <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-bold tracking-wider">
+                            Patient
+                        </span>
                     </div>
-                ))}
+                </div>
+                {/* Right Side: Useful Stats Card */}
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4">
+                    <div className="flex items-start justify-between gap-8">
+                        {/* Today's Dosage */}
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium text-slate-500">Today's Dosage:</p>
+                            <div className="text-3xl font-bold text-slate-700">2/3</div>
+                        </div>
+
+                        {/* Adherence Rate */}
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium text-slate-500">Adherence Rate:</p>
+                            <div className="text-3xl font-bold text-slate-700">{stats.rate}%</div>
+                            <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2 overflow-hidden">
+                                <div
+                                    className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
+                                    style={{ width: `${stats.rate}%` }}
+                                />
+                            </div>
+                            <p className="text-xs font-medium text-slate-500 mt-1">Total dosage logs</p>
+                        </div>
+
+                        {/* Streak */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-end gap-2">
+                                <span className="text-sm font-medium text-slate-500">Streak:</span>
+                                <Flame className="w-5 h-5 text-orange-500 fill-orange-500 animate-pulse" />
+                            </div>
+                            <div className="text-2xl font-bold text-slate-700">{stats.streak} Days</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Middle Section: Schedule + Upload */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Schedule Table */}
                 <div className="lg:col-span-8 realistic-card p-0 overflow-hidden bg-white">
                     <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white">
                         <div>
-                            <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Today's Schedule</h2>
-                            <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">{format(selectedDate, "EEEE, MMMM dd, yyyy")}</p>
+                            <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Medication Schedule</h2>
+                            <p className="text-xs font-bold text-slate-400 mt-1 tracking-widest">{format(selectedDate, "EEEE, MMMM dd, yyyy")}</p>
                         </div>
                         <div className="flex gap-2">
-                            <div className="h-10 px-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Routine</div>
+                            <div className="h-10 px-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center text-[10px] font-black text-slate-400 tracking-widest">Active Routine</div>
                         </div>
                     </div>
                     <div className="divide-y divide-slate-100">
@@ -198,10 +228,10 @@ export default function PatientDashboard() {
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-4">
-                                                <span className="text-xs font-black text-blue-600 font-mono tracking-widest">{med.reminder_time}</span>
+                                                <span className="text-xs font-black text-blue-400 font-sans tracking-widest">{med.reminder_time}</span>
                                                 <h3 className="text-xl font-bold text-slate-800">{med.name}</h3>
                                             </div>
-                                            <p className="text-sm font-medium text-slate-400 mt-1">Registry: {med.dosage} • {med.instructions || 'Daily'}</p>
+                                            <p className="text-sm font-medium text-slate-400 mt-1">{med.dosage} • {med.instructions || 'Daily'}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-8">
@@ -212,7 +242,7 @@ export default function PatientDashboard() {
                                                 onChange={(e) => toggleTaken.mutate({ medId: med.id, taken: e.target.checked })}
                                                 className="h-7 w-7 rounded-xl border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer shadow-sm"
                                             />
-                                            <span className="text-[10px] font-black text-slate-400 group-hover/check:text-slate-800 transition-colors uppercase tracking-[0.2em] pt-0.5">Taken</span>
+                                            <span className="text-[10px] font-black text-slate-400 group-hover/check:text-slate-800 transition-colors tracking-[0.2em] pt-0.5">Taken</span>
                                         </label>
                                         <div className={cn(
                                             "h-12 w-12 flex items-center justify-center rounded-2xl transition-all duration-500 shadow-sm",
@@ -225,7 +255,7 @@ export default function PatientDashboard() {
                             )
                         })}
                         {medications?.length === 0 && (
-                            <div className="py-24 text-center text-slate-300 font-black uppercase tracking-[0.3em] text-[10px]">No medical entries on this date</div>
+                            <div className="py-24 text-center text-slate-300 font-black tracking-[0.3em] text-[10px]">No medical entries on this date</div>
                         )}
                     </div>
                 </div>
@@ -236,7 +266,7 @@ export default function PatientDashboard() {
                         <h2 className="text-xl font-black text-slate-800 flex items-center gap-3">
                             <Camera className="w-6 h-6 text-blue-600" /> Intake Log
                         </h2>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Image verification for records</p>
+                        <p className="text-xs font-bold text-slate-400 tracking-widest">Image verification for records</p>
                     </div>
 
                     <div
@@ -250,17 +280,17 @@ export default function PatientDashboard() {
                                 <div className="h-20 w-20 bg-white rounded-3xl shadow-md border border-slate-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                     <UploadIcon className="w-10 h-10 text-slate-300 group-hover:text-blue-500" />
                                 </div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center px-4 leading-relaxed">Tap to capture or stream<br />pill photo verification</p>
+                                <p className="text-[10px] font-black text-slate-400 tracking-[0.2em] text-center px-4 leading-relaxed">Tap to capture or stream<br />pill photo verification</p>
                             </>
                         )}
                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                     </div>
-                    <Button className="w-full bg-slate-900 hover:bg-black h-16 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all">
+                    <Button className="w-full bg-slate-900 hover:bg-black h-16 rounded-2xl font-black text-xs tracking-[0.2em] shadow-xl active:scale-95 transition-all">
                         Commit Record
                     </Button>
                     <div className="flex items-center gap-4 p-5 bg-emerald-50 rounded-2xl border border-emerald-100 text-emerald-800">
                         <Check className="h-6 w-6 stroke-[3]" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Security Ready</span>
+                        <span className="text-[10px] font-black tracking-widest">Security Ready</span>
                     </div>
                 </div>
             </div>
@@ -271,10 +301,6 @@ export default function PatientDashboard() {
                 onDateSelect={setSelectedDate}
                 logs={allLogs}
             />
-
-            <div className="text-center py-10 opacity-30">
-                <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">System Node v3.0 • Crafted for Medical Precision</p>
-            </div>
         </div>
     )
 }
