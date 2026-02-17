@@ -10,11 +10,19 @@ import {
     Bed,
     Check,
     X,
+    Clock,
+    Calendar as CalendarIcon,
+    CalendarDays,
+    ChevronRight,
+    Pill,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import Calendar from "@/components/Calendar";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface Patient {
     id: string
@@ -40,32 +48,18 @@ interface MedicationLog {
 
 export default function CaretakerDashboard() {
     const { session } = useAuth();
+    const queryClient = useQueryClient();
     const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState(new Date());
 
-    // Caretaker specific: List of patients
-    const { data: patients } = useQuery({
-        queryKey: ["patients"],
-        queryFn: async () => {
-            if (!session?.user.email) return []
-            const { data, error } = await supabase
-                .from("profiles")
-                .select("*")
-                .eq("caretaker_email", session.user.email)
-            if (error) throw error
-            return data as Patient[]
-        },
-        enabled: !!session?.user.email
-    })
+    // Form states
+    const [medName, setMedName] = useState("");
+    const [medDosage, setMedDosage] = useState("");
+    const [medTime, setMedTime] = useState("08:00");
+    const [medInstructions, setMedInstructions] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Auto-select first patient
-    useEffect(() => {
-        if (patients && patients.length > 0 && !selectedPatientId) {
-            setSelectedPatientId(patients[0].id)
-        }
-    }, [patients, selectedPatientId])
-
-    const targetUserId = selectedPatientId
+    const targetUserId = session?.user?.id;
 
     // Data Fetching
     const { data: medications } = useQuery({
@@ -149,15 +143,59 @@ export default function CaretakerDashboard() {
 
     const isTaken = (medId: string) => currentLogs?.some((log) => log.medication_id === medId && log.taken)
 
+    const addMedicationMutation = useMutation({
+        mutationFn: async (newMed: any) => {
+            const { data, error } = await supabase
+                .from("medications")
+                .insert([newMed])
+                .select();
+            if (error) throw error;
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["medications", targetUserId] });
+            setMedName("");
+            setMedDosage("");
+            setMedInstructions("");
+            setIsSubmitting(false);
+        },
+        onError: (error: any) => {
+            console.error("Error adding medication:", error);
+            setIsSubmitting(false);
+            alert("Failed to add medication: " + error.message);
+        }
+    });
+
+    const handleSaveMedication = () => {
+        if (!targetUserId) {
+            alert("Please select a patient first");
+            return;
+        }
+        if (!medName || !medTime) {
+            alert("Name and Time are required");
+            return;
+        }
+
+        setIsSubmitting(true);
+        addMedicationMutation.mutate({
+            user_id: targetUserId,
+            name: medName,
+            dosage: medDosage || "1 Tablet",
+            reminder_time: medTime,
+            instructions: medInstructions,
+            frequency: "Daily"
+        });
+    };
+
     return (
-        <div className="max-w-[1200px] mx-auto px-6 py-6 space-y-10 animate-fade-in pb-20 font-sans">
+        <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-10 animate-fade-in pb-20 font-sans">
             {/* Caretaker Header & Stats Card */}
             <div className="flex flex-col lg:flex-row items-start justify-between gap-6 pb-6 border-b border-slate-200/50">
                 {/* Left Side: Greeting & Role */}
-                <div className="space-y-1">
+                <div className="space-y-1 pt-8">
                     <p className="text-sm font-medium text-slate-500">{getGreeting()},</p>
                     <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
-                        {session?.user.email?.split('@')[0] || 'User'}
+                        {session?.user?.user_metadata?.full_name || 'User'}
                     </h1>
                     <div className="flex items-center gap-2 pt-1">
                         <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-bold tracking-wider">
@@ -165,10 +203,15 @@ export default function CaretakerDashboard() {
                         </span>
                     </div>
                 </div>
-
                 {/* Right Side: Useful Stats Card */}
                 <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4">
                     <div className="flex items-start justify-between gap-8">
+                        {/* Today's Dosage */}
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium text-slate-500">Today's Dosage:</p>
+                            <div className="text-3xl font-bold text-slate-700">2/3</div>
+                        </div>
+
                         {/* Adherence Rate */}
                         <div className="space-y-2">
                             <p className="text-sm font-medium text-slate-500">Adherence Rate:</p>
@@ -246,6 +289,118 @@ export default function CaretakerDashboard() {
                         logs={allLogs}
                         className="bg-white"
                     />
+                </div>
+            </div>
+
+            {/* New Medication Schedule Form Section - Refined & Compact */}
+            <div className="mt-4 animate-slide-up delay-200">
+                <div className="realistic-card p-0 overflow-hidden bg-white max-w-[900px]">
+                    {/* Tabs - More Compact */}
+                    <div className="flex bg-slate-50 border-b border-slate-100 h-11">
+                        <button className="px-6 h-full bg-[#2563eb] text-white font-bold text-xs tracking-wider uppercase">Schedule</button>
+                        <button className="px-6 h-full bg-white text-slate-400 font-bold text-xs tracking-wider uppercase hover:text-slate-600 transition-colors border-r border-slate-100">Settings</button>
+                    </div>
+
+                    <div className="p-6 md:p-8 space-y-6">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                                <span className="h-6 w-1 bg-blue-500 rounded-full"></span>
+                                New Notification
+                            </h2>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-lg border border-slate-100">Personal Schedule</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Medication Name
+                                </label>
+                                <Input
+                                    value={medName}
+                                    onChange={(e) => setMedName(e.target.value)}
+                                    placeholder="e.g. Morning Pills"
+                                    className="h-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-blue-500/20 transition-all font-medium text-slate-700 shadow-none hover:border-slate-200"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Reminder Time
+                                </label>
+                                <div className="relative group">
+                                    <Input
+                                        type="time"
+                                        value={medTime}
+                                        onChange={(e) => setMedTime(e.target.value)}
+                                        className="h-11 border-slate-100 bg-slate-50/50 rounded-xl pl-10 focus:ring-blue-500/20 transition-all font-medium text-slate-700 shadow-none hover:border-slate-200"
+                                    />
+                                    <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Dosage
+                                </label>
+                                <div className="relative group">
+                                    <Input
+                                        value={medDosage}
+                                        onChange={(e) => setMedDosage(e.target.value)}
+                                        placeholder="e.g. 1 Tablet"
+                                        className="h-11 border-slate-100 bg-slate-50/50 rounded-xl pl-10 focus:ring-blue-500/20 transition-all font-medium text-slate-700 shadow-none hover:border-slate-200"
+                                    />
+                                    <Pill className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500/60 rotate-45" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <span className="w-1 h-1 bg-blue-400 rounded-full"></span> Instructions / Note
+                            </label>
+
+                            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+                                <div className="hidden lg:flex gap-2">
+                                    <div className="h-11 w-11 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-500">
+                                        <Sun className="w-5 h-5" />
+                                    </div>
+                                    <div className="h-11 w-11 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-400">
+                                        <Pill className="w-5 h-5 rotate-45" />
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 w-full">
+                                    <Input
+                                        value={medInstructions}
+                                        onChange={(e) => setMedInstructions(e.target.value)}
+                                        placeholder="Instructions (e.g. Take after meal)"
+                                        className="h-11 border-slate-100 bg-slate-50/50 rounded-xl px-4 focus:ring-blue-500/20 transition-all font-bold text-slate-600 shadow-none hover:border-slate-200"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 pt-2">
+                            <Button
+                                onClick={handleSaveMedication}
+                                disabled={isSubmitting}
+                                className="h-11 px-8 bg-[#55a075] hover:bg-[#448b63] text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-500/10 transition-all active:scale-[0.98]"
+                            >
+                                {isSubmitting ? "Saving..." : "Save Notification"}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setMedName("");
+                                    setMedDosage("");
+                                    setMedInstructions("");
+                                }}
+                                className="h-11 px-8 bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-xl font-bold text-sm border-slate-200 transition-all active:scale-[0.98] shadow-none"
+                            >
+                                Clear
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
