@@ -12,7 +12,6 @@ import {
     X,
     Clock,
     Calendar as CalendarIcon,
-    CalendarDays,
     ChevronRight,
     Pill,
     Bell,
@@ -27,12 +26,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-interface Patient {
-    id: string
-    name: string
-    email: string
-    role: string
-}
 
 interface Medication {
     id: string
@@ -52,7 +45,6 @@ interface MedicationLog {
 export default function CaretakerDashboard() {
     const { session } = useAuth();
     const queryClient = useQueryClient();
-    const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState(new Date());
 
     // Form states
