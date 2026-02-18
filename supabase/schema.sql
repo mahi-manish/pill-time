@@ -105,7 +105,20 @@ create table alerts (
   medication_id uuid references medications on delete cascade,
   type text not null,
   message text not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  alert_delay TEXT DEFAULT '1 hour' -- 10min, 30min, 1 hour, 2 hours
+);
+
+-- Med logs
+CREATE TABLE IF NOT EXISTS medication_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  medication_id UUID REFERENCES medications(id) ON DELETE CASCADE,
+  taken BOOLEAN DEFAULT FALSE,
+  image_url TEXT,
+  taken_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
+  date DATE DEFAULT CURRENT_DATE,
+  alert_sent BOOLEAN DEFAULT FALSE
 );
 
 -- Enable RLS

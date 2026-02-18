@@ -63,7 +63,6 @@ export default function CaretakerDashboard() {
     const [caretakerEmail, setCaretakerEmail] = useState("");
     const [missedAlertsEnabled, setMissedAlertsEnabled] = useState(true);
     const [alertDelay, setAlertDelay] = useState("2 hours");
-    const [dailyReminderTime, setDailyReminderTime] = useState("20:00");
     const [isSavingSettings, setIsSavingSettings] = useState(false);
     const targetUserId = session?.user?.id;
 
@@ -86,6 +85,9 @@ export default function CaretakerDashboard() {
     useEffect(() => {
         if (profile) {
             setCaretakerEmail(profile.caretaker_email || "");
+            if (profile.alert_delay) {
+                setAlertDelay(profile.alert_delay);
+            }
         }
     }, [profile]);
 
@@ -320,12 +322,15 @@ export default function CaretakerDashboard() {
 
     const updateSettingsMutation = useMutation({
         mutationFn: async () => {
+            if (!session?.user?.id) throw new Error("No user logged in");
+            
             const { error } = await supabase
                 .from("profiles")
                 .update({
                     caretaker_email: caretakerEmail,
+                    alert_delay: alertDelay
                 })
-                .eq("id", targetUserId);
+                .eq("id", session.user.id); // Profile ID matches Auth User ID
             if (error) throw error;
         },
         onSuccess: () => {
@@ -617,46 +622,6 @@ export default function CaretakerDashboard() {
                         <div className="p-6 md:p-8 space-y-8">
 
                             <div className="space-y-6">
-                                {/* Email Notifications Toggle */}
-                                <div className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100 space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-start gap-4">
-                                            <div className="p-2.5 bg-blue-100/50 rounded-xl">
-                                                <Bell className="w-5 h-5 text-blue-600" />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-slate-800">Email Notifications</h3>
-                                                <p className="text-sm text-slate-500 font-medium">Receive medication alerts via email</p>
-                                            </div>
-                                        </div>
-                                        <div
-                                            onClick={() => setEmailEnabled(!emailEnabled)}
-                                            className={cn(
-                                                "w-12 h-6 rounded-full p-1 cursor-pointer transition-all duration-300 relative",
-                                                emailEnabled ? "bg-[#55a075]" : "bg-slate-300"
-                                            )}
-                                        >
-                                            <div className={cn(
-                                                "w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300",
-                                                emailEnabled ? "translate-x-6" : "translate-x-0"
-                                            )} />
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-white rounded-xl p-4 border border-slate-100 space-y-2">
-                                        <label className="text-xs font-medium text-slate-400 mt-0.5">Email Address</label>
-                                        <div className="relative">
-                                            <Input
-                                                value={caretakerEmail}
-                                                onChange={(e) => setCaretakerEmail(e.target.value)}
-                                                placeholder="caretaker@example.com"
-                                                className="h-12 border-slate-100 bg-slate-50/30 rounded-xl pr-12 font-medium text-slate-700 shadow-none border-b-2"
-                                            />
-                                            <CalendarIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500/40" />
-                                        </div>
-                                    </div>
-                                </div>
-
                                 {/* Missed Medication Alerts Toggle */}
                                 <div className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100 space-y-6">
                                     <div className="flex items-center justify-between">
@@ -685,6 +650,18 @@ export default function CaretakerDashboard() {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
+                                            <label className="text-xs font-medium text-slate-400 mt-0.5">Caretaker Email Address</label>
+                                            <div className="relative">
+                                                <Input
+                                                    value={caretakerEmail}
+                                                    onChange={(e) => setCaretakerEmail(e.target.value)}
+                                                    placeholder="caretaker@example.com"
+                                                    className="h-12 border-slate-100 bg-slate-50/30 rounded-xl pr-12 font-medium text-slate-700 shadow-none border-b-2"
+                                                />
+                                                <CalendarIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500/40" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
                                             <label className="text-xs font-medium text-slate-400 mt-0.5">Alert Delay</label>
                                             <div className="relative">
                                                 <select
@@ -692,25 +669,13 @@ export default function CaretakerDashboard() {
                                                     onChange={(e) => setAlertDelay(e.target.value)}
                                                     className="w-full h-12 bg-white border border-slate-100 rounded-xl px-4 text-sm font-medium text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/10"
                                                 >
+                                                    <option>10 min</option>
+                                                    <option>30 min</option>
                                                     <option>1 hour</option>
                                                     <option>2 hours</option>
-                                                    <option>4 hours</option>
                                                 </select>
                                                 <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 rotate-90" />
                                             </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-medium text-slate-400 mt-0.5">Daily reminder time</label>
-                                            <div className="relative">
-                                                <Input
-                                                    type="time"
-                                                    value={dailyReminderTime}
-                                                    onChange={(e) => setDailyReminderTime(e.target.value)}
-                                                    className="h-12 border-slate-100 bg-white rounded-xl pl-10 font-medium text-slate-700 shadow-none"
-                                                />
-                                                <Clock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                                            </div>
-                                            <p className="text-[10px] font-medium text-slate-400">Time to check if today's medication was taken</p>
                                         </div>
                                     </div>
                                 </div>
