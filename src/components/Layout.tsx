@@ -1,22 +1,19 @@
-import { Link, Outlet, useNavigate, useLocation } from "react-router-dom"
+import { Link, Outlet, useNavigate } from "react-router-dom"
 import { useAuth } from "@/context/AuthContext"
 import { Button } from "@/components/ui/button"
-import { Home, Pill } from "lucide-react"
+import { Pill, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export default function Layout() {
     const { session, signOut, userRole, updateRole } = useAuth()
     const navigate = useNavigate()
-    const location = useLocation()
 
     const handleLogout = async () => {
         await signOut()
         navigate("/login")
     }
 
-    const navItems = [
-        { icon: Home, label: "Home", path: "/" }
-    ]
+
 
     const handleRoleSwitch = () => {
         const newRole = userRole === 'caretaker' ? 'patient' : 'caretaker'
@@ -76,26 +73,47 @@ export default function Layout() {
                 </div>
             </main>
 
-            {/* Floating Bottom Nav for Mobile */}
+            {/* Mobile Bottom Navigation - Pill Time Style */}
             {session && (
-                <nav className="fixed bottom-6 left-0 right-0 px-6 md:hidden z-50">
-                    <div className="max-w-md mx-auto bg-white/90 backdrop-blur-xl border border-slate-200 rounded-2xl h-16 flex items-center justify-around px-4 shadow-xl">
-                        {navItems.map((item) => {
-                            const Icon = item.icon
-                            const isActive = location.pathname === item.path
-                            return (
-                                <Link
-                                    key={item.path}
-                                    to={item.path}
-                                    className={cn(
-                                        "relative flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-all",
-                                        isActive ? "bg-blue-50 text-blue-600 shadow-inner" : "text-slate-400 hover:text-slate-600"
-                                    )}
-                                >
-                                    <Icon className={cn("h-6 w-6", isActive ? "stroke-[2.5]" : "stroke-[2]")} />
-                                </Link>
-                            )
-                        })}
+                <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-3 md:hidden z-50 safe-area-bottom pb-6">
+                    <div className="flex items-center justify-between">
+                        {/* Left: Brand */}
+                        <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                                <Pill className="h-4 w-4 text-white stroke-[3px]" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs font-black text-slate-800 tracking-tighter leading-none">Pill</span>
+                                <span className="text-xs font-black text-emerald-600 tracking-tighter leading-none">Time</span>
+                            </div>
+                        </div>
+
+                         {/* Center: Switch Role */}
+                         {userRole && (
+                             <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleRoleSwitch}
+                                className={cn(
+                                    "h-8 px-3 rounded-lg text-[10px] font-bold tracking-wide border transition-all",
+                                    userRole === 'caretaker'
+                                        ? "text-emerald-600 bg-emerald-50 border-emerald-100"
+                                        : "text-blue-600 bg-blue-50 border-blue-100"
+                                )}
+                             >
+                                Switch Role
+                             </Button>
+                         )}
+
+                         {/* Right: Logout */}
+                         <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleLogout}
+                            className="h-8 w-8 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50"
+                         >
+                            <LogOut className="h-4 w-4" />
+                         </Button>
                     </div>
                 </nav>
             )}

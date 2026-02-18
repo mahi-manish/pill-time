@@ -141,11 +141,9 @@ export default function Calendar({ selectedDate, onDateSelect, logs, medications
                     const isFutureDate = isFuture(date)
 
                     let bgClass = ""
-                    let textClass = "text-slate-600"
 
                     if (isSelected) {
                         bgClass = "bg-blue-50 ring-1 ring-blue-200" // Premium selection
-                        textClass = "text-blue-600 font-bold"
                     }
 
                     return (
@@ -154,7 +152,6 @@ export default function Calendar({ selectedDate, onDateSelect, logs, medications
                                 onClick={() => onDateSelect(date)}
                                 className={cn(
                                     "h-9 w-9 rounded-full flex items-center justify-center text-sm transition-all relative group",
-                                    // textClass, // This is removed
                                     bgClass,
                                     !isSelected && "hover:bg-slate-50"
                                 )}

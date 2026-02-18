@@ -59,7 +59,6 @@ export default function CaretakerDashboard() {
     const [activeTab, setActiveTab] = useState<"schedule" | "settings">("schedule");
 
     // Settings States
-    const [emailEnabled, setEmailEnabled] = useState(true);
     const [caretakerEmail, setCaretakerEmail] = useState("");
     const [missedAlertsEnabled, setMissedAlertsEnabled] = useState(true);
     const [alertDelay, setAlertDelay] = useState("2 hours");
