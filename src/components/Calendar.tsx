@@ -67,9 +67,8 @@ export default function Calendar({ selectedDate, onDateSelect, logs, medications
             return 'taken';
         }
 
-        // 4. User request: Mark all past days as Red if not 'taken'
-        // If it's a past day and we don't have a 'taken' status, it's 'missed' (Red)
-        if (isPastDay) {
+        // 4. Past days: Show missed ONLY if medications were scheduled
+        if (isPastDay && medsForDay.length > 0) {
             return 'missed';
         }
 
@@ -82,7 +81,7 @@ export default function Calendar({ selectedDate, onDateSelect, logs, medications
     }
 
     return (
-        <div className={cn("bg-white rounded-[32px] p-8 shadow-sm hover:shadow-md border border-slate-100 w-full h-full font-sans transition-all duration-300", className)}>
+        <div className={cn("bg-white rounded-[24px] p-8 shadow-sm hover:shadow-md border border-slate-100 w-full h-full font-sans transition-all duration-300", className)}>
             <div className="flex items-center justify-between mb-8">
                 <h2 className="text-xl font-bold text-slate-800 tracking-tight">Calendar View</h2>
 
@@ -139,7 +138,6 @@ export default function Calendar({ selectedDate, onDateSelect, logs, medications
                     const isTodayDate = isToday(date)
                     const status = getDayStatus(date)
                     const isFutureDate = isFuture(date)
-
                     let bgClass = ""
 
                     if (isSelected) {

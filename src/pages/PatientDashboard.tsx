@@ -251,7 +251,7 @@ export default function PatientDashboard() {
                     </div>
                 </div>
                 {/* Right Side: Useful Stats Card */}
-                <div className="bg-[#e6e6fa] rounded-3xl p-6 shadow-sm border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4">
+                <div className="bg-[#e6e6fa] rounded-[24px] p-6 shadow-sm border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4">
                     <div className="flex items-start justify-between gap-8">
                         {/* Today's Dosage */}
                         <div className="space-y-2">
@@ -287,7 +287,7 @@ export default function PatientDashboard() {
             {/* Middle Section: Schedule + Upload */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Schedule Table */}
-                <div className="lg:col-span-7 bg-white border border-slate-100 rounded-[32px] p-0 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="lg:col-span-7 bg-white border border-slate-100 rounded-[24px] p-0 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="p-8 flex items-center justify-between bg-white">
                         <div>
                             <h2 className="text-xl font-bold text-slate-800 tracking-tight">Medication Schedule</h2>
@@ -328,21 +328,29 @@ export default function PatientDashboard() {
                                             }
                                         }}
                                         className={cn(
-                                            "flex bg-slate-100 rounded-full p-1 cursor-pointer transition-all select-none shadow-inner w-full sm:w-auto justify-between sm:justify-start",
-                                            !isToday(selectedDate) && "opacity-50 pointer-events-none grayscale"
+                                            "flex items-center gap-1.5 px-2 py-0 rounded-full cursor-pointer transition-all border select-none h-[26px] w-fit shrink-0",
+                                            taken
+                                                ? "bg-emerald-50/50 border-emerald-100"
+                                                : "bg-slate-50/30 border-slate-100",
+                                            !isToday(selectedDate) && "opacity-40 pointer-events-none green"
                                         )}
                                     >
-                                        <div className={cn(
-                                            "flex-1 sm:flex-none px-4 py-1.5 rounded-full text-[10px] font-bold transition-all tracking-wider flex items-center justify-center gap-2",
-                                            !taken ? "bg-slate-400 text-white shadow-sm" : "text-slate-400 hover:text-slate-600"
+                                        <span className={cn(
+                                            "text-[8.5px] font-black tracking-tight",
+                                            taken ? "text-emerald-600" : "text-slate-400"
                                         )}>
-                                            {!taken && <X className="w-3 h-3" />} Not Taken
-                                        </div>
+                                            {taken ? "Done" : "Mark"}
+                                        </span>
                                         <div className={cn(
-                                            "flex-1 sm:flex-none px-4 py-1.5 rounded-full text-[10px] font-bold transition-all tracking-wider flex items-center justify-center gap-2",
-                                            taken ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400 hover:text-slate-600"
+                                            "w-6 h-3.5 rounded-full relative transition-all duration-300",
+                                            taken ? "bg-emerald-500" : "bg-slate-200"
                                         )}>
-                                            {taken && <Check className="w-3 h-3 stroke-[3]" />} Taken
+                                            <div className={cn(
+                                                "absolute top-0.5 left-0.5 w-2.5 h-2.5 rounded-full bg-white transition-all duration-300 flex items-center justify-center",
+                                                taken ? "translate-x-2.5" : "translate-x-0"
+                                            )}>
+                                                {taken && <Check className="w-1.5 h-1.5 text-emerald-500 stroke-[5]" />}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -355,7 +363,7 @@ export default function PatientDashboard() {
                 </div>
 
                 {/* Upload Section */}
-                <div className="lg:col-span-5 bg-white border border-slate-100 rounded-[32px] p-10 flex flex-col gap-8 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="lg:col-span-5 bg-white border border-slate-100 rounded-[24px] p-10 flex flex-col gap-8 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
                     <div className="space-y-2">
                         <h2 className="text-xl font-bold text-slate-800 flex items-center gap-3 tracking-tight">
                             <div className="p-2 bg-blue-50 rounded-xl">
@@ -413,7 +421,7 @@ export default function PatientDashboard() {
                 </div>
 
                 {/* Right Side: Health Wellness Center */}
-                <div className="lg:col-span-5 bg-white border border-slate-100 rounded-[32px] p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-8 self-start">
+                <div className="lg:col-span-5 bg-white border border-slate-100 rounded-[24px] p-8 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col gap-8 self-start overflow-hidden">
                     {/* Wellness Title */}
                     <div className="space-y-1">
                         <h2 className="text-xl font-bold text-slate-800 flex items-center gap-3 tracking-tight">

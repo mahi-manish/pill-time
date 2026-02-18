@@ -21,7 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import Calendar from "@/components/Calendar";
-import { format, subDays } from "date-fns";
+import { format, subDays, isPast } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -243,7 +243,7 @@ export default function CaretakerDashboard() {
                 .from("medications")
                 .insert(newMed)
                 .select();
-            
+
             if (error) throw error;
 
             // Step 2: Create initial log entry
@@ -257,7 +257,7 @@ export default function CaretakerDashboard() {
                     // If target_date is set (Specific Dates), use that date
                     // If target_date is null, use today's date as the start
                     const logDate = med.target_date || todayStr;
-                    
+
                     logsToCreate.push({
                         medication_id: med.id,
                         user_id: med.user_id,
@@ -271,7 +271,7 @@ export default function CaretakerDashboard() {
                     const { error: logError } = await supabase
                         .from("medication_logs")
                         .insert(logsToCreate);
-                    
+
                     if (logError) {
                         console.error("Error creating initial log:", logError);
                     }
@@ -309,7 +309,7 @@ export default function CaretakerDashboard() {
         setIsSubmitting(true);
         const todayStr = format(new Date(), "yyyy-MM-dd");
 
-        const newMedications = selectedDates.length > 0 
+        const newMedications = selectedDates.length > 0
             ? selectedDates.map(date => ({
                 user_id: targetUserId,
                 name: medName,
@@ -358,7 +358,7 @@ export default function CaretakerDashboard() {
     const updateSettingsMutation = useMutation({
         mutationFn: async () => {
             if (!session?.user?.id) throw new Error("No user logged in");
-            
+
             const { error } = await supabase
                 .from("profiles")
                 .update({
@@ -402,7 +402,7 @@ export default function CaretakerDashboard() {
                     </div>
                 </div>
                 {/* Right Side: Useful Stats Card */}
-                <div className="bg-[#b0e0e6] rounded-3xl p-6 shadow-sm hover:shadow-md border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4">
+                <div className="bg-[#b0e0e6] rounded-[24px] p-6 shadow-sm hover:shadow-md border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4">
                     <div className="flex items-start justify-between gap-10">
                         {/* Today's Dosage */}
                         <div className="space-y-2">
@@ -442,7 +442,7 @@ export default function CaretakerDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Left Side: Medication Schedule */}
-                <div className="bg-white rounded-3xl p-0 shadow-sm hover:shadow-md overflow-hidden h-fit">
+                <div className="bg-white rounded-[24px] p-0 shadow-sm hover:shadow-md overflow-hidden h-fit">
                     <div className="p-8 flex items-center justify-between bg-white">
                         <div>
                             <h2 className="text-xl font-bold text-slate-800 tracking-tight">Medication Schedule</h2>
@@ -468,12 +468,15 @@ export default function CaretakerDashboard() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                                        <button
-                                            onClick={() => handleDeleteMedication(med.id)}
-                                            className="h-8 w-8 flex items-center justify-center rounded-xl bg-slate-50 text-rose-400 hover:bg-rose-50 hover:text-red-500 transition-all border border-slate-100 shrink-0"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        {/* @ts-ignore */}
+                                        {!isPast(med.target_date) &&
+                                            <button
+                                                onClick={() => handleDeleteMedication(med.id)}
+                                                className="h-8 w-8 flex items-center justify-center rounded-xl bg-slate-50 text-rose-400 hover:bg-rose-50 hover:text-red-500 transition-all border border-slate-100 shrink-0"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        }
                                         <div className={cn(
                                             "h-6 w-6 flex items-center justify-center rounded-full transition-all shadow-sm shrink-0",
                                             taken ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-300"
@@ -496,6 +499,7 @@ export default function CaretakerDashboard() {
                         selectedDate={selectedDate}
                         onDateSelect={setSelectedDate}
                         logs={allLogs}
+                        medications={medications}
                         className="bg-white"
                     />
                 </div>
@@ -724,7 +728,7 @@ export default function CaretakerDashboard() {
                                     </div>
                                 </div>
 
-                                
+
                                 {/* Manual Alert Test */}
                                 <div className="bg-orange-50/50 rounded-2xl p-6 border border-orange-100 space-y-4">
                                     <div className="flex items-start gap-4">
@@ -742,7 +746,7 @@ export default function CaretakerDashboard() {
                                         </div>
                                     </div>
                                     <div className="pl-[52px]">
-                                        <Button 
+                                        <Button
                                             onClick={async () => {
                                                 const { error } = await supabase.functions.invoke('check-missed-meds');
                                                 if (error) {
