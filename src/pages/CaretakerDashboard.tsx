@@ -244,11 +244,46 @@ export default function CaretakerDashboard() {
                 .from("medications")
                 .insert(newMed)
                 .select();
+            
             if (error) throw error;
+
+            // Step 2: Create initial log entry
+            // This ensures it's picked up by the email alert system immediately
+            if (data && data.length > 0) {
+                const todayStr = format(new Date(), "yyyy-MM-dd");
+                const logsToCreate: any[] = [];
+
+                data.forEach((med: any) => {
+                    // For each created medication (which corresponds to a date), create a log
+                    // If target_date is set (Specific Dates), use that date
+                    // If target_date is null, use today's date as the start
+                    const logDate = med.target_date || todayStr;
+                    
+                    logsToCreate.push({
+                        medication_id: med.id,
+                        user_id: med.user_id,
+                        date: logDate,
+                        taken: false,
+                        alert_sent: false
+                    });
+                });
+
+                if (logsToCreate.length > 0) {
+                    const { error: logError } = await supabase
+                        .from("medication_logs")
+                        .insert(logsToCreate);
+                    
+                    if (logError) {
+                        console.error("Error creating initial log:", logError);
+                    }
+                }
+            }
+
             return data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["medications", targetUserId] });
+            queryClient.invalidateQueries({ queryKey: ["logs", targetUserId] }); // Also invalidate logs
             setMedName("");
             setMedDosage("");
             setMedInstructions("");
@@ -273,6 +308,7 @@ export default function CaretakerDashboard() {
         }
 
         setIsSubmitting(true);
+        const todayStr = format(new Date(), "yyyy-MM-dd");
 
         const newMedications = selectedDates.length > 0 
             ? selectedDates.map(date => ({
@@ -290,7 +326,7 @@ export default function CaretakerDashboard() {
                 dosage: medDosage || "1 Tablet",
                 reminder_time: medTime,
                 instructions: medInstructions,
-                target_date: null,
+                target_date: todayStr,
                 frequency: "Daily"
             };
 
@@ -678,6 +714,49 @@ export default function CaretakerDashboard() {
                                             </div>
                                         </div>
                                     </div>
+                                    <div className="flex pt-4">
+                                        <Button
+                                            onClick={handleSaveSettings}
+                                            disabled={isSavingSettings || !missedAlertsEnabled}
+                                            className="h-11 px-8 bg-[#55a075] hover:bg-[#448b63] text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-500/10 transition-all active:scale-[0.98]"
+                                        >
+                                            {isSavingSettings ? "Saving Settings..." : "Save Notification Settings"}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                
+                                {/* Manual Alert Test */}
+                                <div className="bg-orange-50/50 rounded-2xl p-6 border border-orange-100 space-y-4">
+                                    <div className="flex items-start gap-4">
+                                        <div className="p-2.5 bg-orange-100/50 rounded-xl">
+                                            <Bell className="w-5 h-5 text-orange-500" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-slate-800">Automatic Alerts</h3>
+                                            <p className="text-sm text-slate-500 font-medium mt-1">
+                                                An automatic alert email will be sent to the caretaker email after {alertDelay} delay if medication is missed.
+                                            </p>
+                                            <p className="text-sm text-slate-500 font-medium mt-1">
+                                                To send a reminder email, click the button below.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="pl-[52px]">
+                                        <Button 
+                                            onClick={async () => {
+                                                const { error } = await supabase.functions.invoke('check-missed-meds');
+                                                if (error) {
+                                                    alert('Error sending alert: ' + error.message);
+                                                } else {
+                                                    alert('Alert email has been sent!');
+                                                }
+                                            }}
+                                            className="bg-[#55a075] hover:bg-[#448b63] text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-transform"
+                                        >
+                                            Send Reminder Email
+                                        </Button>
+                                    </div>
                                 </div>
 
                                 {/* Email Preview */}
@@ -699,16 +778,6 @@ export default function CaretakerDashboard() {
                                             <p className="text-slate-400">Current adherence rate: {stats.rate}% ({stats.streak}-day streak)</p>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div className="flex pt-4">
-                                    <Button
-                                        onClick={handleSaveSettings}
-                                        disabled={isSavingSettings}
-                                        className="h-11 px-8 bg-[#55a075] hover:bg-[#448b63] text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-500/10 transition-all active:scale-[0.98]"
-                                    >
-                                        {isSavingSettings ? "Saving Settings..." : "Save Notification Settings"}
-                                    </Button>
                                 </div>
                             </div>
                         </div>
