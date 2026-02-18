@@ -101,7 +101,7 @@ export default function Layout() {
                                         : "text-blue-600 bg-blue-50 border-blue-100"
                                 )}
                              >
-                                Switch Role
+                                Switch to {userRole === 'caretaker' ? 'Patient' : 'Caretaker'}
                              </Button>
                          )}
 

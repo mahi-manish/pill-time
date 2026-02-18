@@ -772,8 +772,8 @@ export default function CaretakerDashboard() {
                                         </div>
                                         <div className="text-sm text-slate-500 space-y-4 leading-relaxed font-medium">
                                             <p>Hello.</p>
-                                            <p>This is a reminder that {session?.user?.user_metadata?.full_name || 'User'} has not taken her medication today.</p>
-                                            <p>Please check with her to ensure she takes her prescribed medication.</p>
+                                            <p>This is a reminder that {session?.user?.user_metadata?.full_name || 'User'} has not taken their medication today.</p>
+                                            <p>Please check with them to ensure they take their prescribed medication.</p>
                                             <p className="text-slate-400">Current adherence rate: {stats.rate}% ({stats.streak}-day streak)</p>
                                         </div>
                                     </div>
