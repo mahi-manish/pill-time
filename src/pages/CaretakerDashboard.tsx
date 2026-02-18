@@ -72,7 +72,7 @@ export default function CaretakerDashboard() {
             if (!targetUserId) return null;
             const { data, error } = await supabase
                 .from("profiles")
-                .select("*")
+                .select("caretaker_email, alert_delay")
                 .eq("id", targetUserId)
                 .single();
             if (error) throw error;

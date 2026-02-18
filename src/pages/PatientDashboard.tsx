@@ -7,7 +7,6 @@ import Calendar from "@/components/Calendar"
 import {
     Flame,
     Check,
-    X,
     Upload as UploadIcon,
     Sun,
     CloudIcon,
@@ -417,6 +416,7 @@ export default function PatientDashboard() {
                         onDateSelect={setSelectedDate}
                         logs={allLogs}
                         medications={medications}
+                        className="bg-white"
                     />
                 </div>
 
