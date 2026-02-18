@@ -308,17 +308,17 @@ export default function PatientDashboard() {
                             const taken = isTaken(med.id)
                             const style = getMedIcon(med.reminder_time)
                             return (
-                                <div key={med.id} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all">
-                                    <div className="flex items-center gap-6">
-                                        <div className={cn("h-12 w-12 flex items-center justify-center rounded-xl border border-slate-50 shadow-sm", style.bg, style.color)}>
+                                <div key={med.id} className="p-6 flex flex-col sm:flex-row items-center sm:justify-between gap-4 sm:gap-0 hover:bg-slate-50/50 transition-all">
+                                    <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto">
+                                        <div className={cn("shrink-0 h-12 w-12 flex items-center justify-center rounded-xl border border-slate-50 shadow-sm", style.bg, style.color)}>
                                             {style.icon}
                                         </div>
-                                        <div>
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-xs font-bold text-blue-400 font-sans">{med.reminder_time.slice(0, 5)}</span>
-                                                <h3 className="text-lg font-bold text-slate-800">{med.name}</h3>
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                                                <span className="text-xs font-bold text-blue-400 font-sans whitespace-nowrap">{med.reminder_time.slice(0, 5)}</span>
+                                                <h3 className="text-lg font-bold text-slate-800 truncate">{med.name}</h3>
                                             </div>
-                                            <p className="text-xs font-medium text-slate-400 mt-0.5">{med.dosage} • {med.instructions || 'Take as prescribed'}</p>
+                                            <p className="text-xs font-medium text-slate-400 mt-0.5 truncate max-w-[200px] sm:max-w-none">{med.dosage} • {med.instructions || 'Take as prescribed'}</p>
                                         </div>
                                     </div>
                                     <div
@@ -328,18 +328,18 @@ export default function PatientDashboard() {
                                             }
                                         }}
                                         className={cn(
-                                            "flex bg-slate-100 rounded-full p-1 cursor-pointer transition-all select-none shadow-inner",
+                                            "flex bg-slate-100 rounded-full p-1 cursor-pointer transition-all select-none shadow-inner w-full sm:w-auto justify-between sm:justify-start",
                                             !isToday(selectedDate) && "opacity-50 pointer-events-none grayscale"
                                         )}
                                     >
                                         <div className={cn(
-                                            "px-4 py-1.5 rounded-full text-[10px] font-bold transition-all tracking-wider flex items-center gap-2",
+                                            "flex-1 sm:flex-none px-4 py-1.5 rounded-full text-[10px] font-bold transition-all tracking-wider flex items-center justify-center gap-2",
                                             !taken ? "bg-slate-400 text-white shadow-sm" : "text-slate-400 hover:text-slate-600"
                                         )}>
                                             {!taken && <X className="w-3 h-3" />} Not Taken
                                         </div>
                                         <div className={cn(
-                                            "px-4 py-1.5 rounded-full text-[10px] font-bold transition-all tracking-wider flex items-center gap-2",
+                                            "flex-1 sm:flex-none px-4 py-1.5 rounded-full text-[10px] font-bold transition-all tracking-wider flex items-center justify-center gap-2",
                                             taken ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400 hover:text-slate-600"
                                         )}>
                                             {taken && <Check className="w-3 h-3 stroke-[3]" />} Taken

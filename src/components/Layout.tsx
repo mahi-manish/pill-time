@@ -65,7 +65,7 @@ export default function Layout() {
                 </div>
             </header>
 
-            <main className="container mx-auto pb-20 px-6 max-w-[1000px]">
+            <main className="container mx-auto pb-20 px-2 max-w-[1000px]">
                 <Outlet />
 
                 <div className="text-center pt-5 opacity-50">

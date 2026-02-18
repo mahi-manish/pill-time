@@ -454,28 +454,28 @@ export default function CaretakerDashboard() {
                             const taken = isTaken(med.id)
                             const style = getMedIcon(med.reminder_time)
                             return (
-                                <div key={med.id} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all">
-                                    <div className="flex items-center gap-6">
-                                        <div className={cn("h-12 w-12 flex items-center justify-center rounded-xl border border-slate-50 shadow-sm", style.bg, style.color)}>
+                                <div key={med.id} className="p-6 flex flex-col sm:flex-row items-center sm:justify-between gap-4 sm:gap-0 hover:bg-slate-50/50 transition-all">
+                                    <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto">
+                                        <div className={cn("shrink-0 h-12 w-12 flex items-center justify-center rounded-xl border border-slate-50 shadow-sm", style.bg, style.color)}>
                                             {style.icon}
                                         </div>
-                                        <div>
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-xs font-bold text-blue-400 font-sans">{med.reminder_time.slice(0, 5)}</span>
-                                                <h3 className="text-lg font-bold text-slate-800">{med.name}</h3>
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                                                <span className="text-xs font-bold text-blue-400 font-sans whitespace-nowrap">{med.reminder_time.slice(0, 5)}</span>
+                                                <h3 className="text-lg font-bold text-slate-800 truncate">{med.name}</h3>
                                             </div>
-                                            <p className="text-xs font-medium text-slate-400 mt-0.5">{med.dosage} • {med.instructions || 'Take as prescribed'}</p>
+                                            <p className="text-xs font-medium text-slate-400 mt-0.5 truncate max-w-[200px] sm:max-w-none">{med.dosage} • {med.instructions || 'Take as prescribed'}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                                         <button
                                             onClick={() => handleDeleteMedication(med.id)}
-                                            className="h-8 w-8 flex items-center justify-center rounded-xl bg-slate-50 text-rose-400 hover:bg-rose-50 hover:text-red-500 transition-all border border-slate-100"
+                                            className="h-8 w-8 flex items-center justify-center rounded-xl bg-slate-50 text-rose-400 hover:bg-rose-50 hover:text-red-500 transition-all border border-slate-100 shrink-0"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                         <div className={cn(
-                                            "h-6 w-6 flex items-center justify-center rounded-full transition-all shadow-sm",
+                                            "h-6 w-6 flex items-center justify-center rounded-full transition-all shadow-sm shrink-0",
                                             taken ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-300"
                                         )}>
                                             {taken ? <Check className="w-4 h-4 stroke-[3]" /> : <X className="w-4 h-4" />}
@@ -717,7 +717,7 @@ export default function CaretakerDashboard() {
                                         <Button
                                             onClick={handleSaveSettings}
                                             disabled={isSavingSettings || !missedAlertsEnabled}
-                                            className="h-11 px-8 bg-[#55a075] hover:bg-[#448b63] text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-500/10 transition-all active:scale-[0.98]"
+                                            className="h-9 px-4 md:h-11 md:px-8 bg-[#55a075] hover:bg-[#448b63] text-white rounded-xl font-bold text-xs md:text-sm shadow-md shadow-emerald-500/10 transition-all active:scale-[0.98]"
                                         >
                                             {isSavingSettings ? "Saving Settings..." : "Save Notification Settings"}
                                         </Button>
@@ -751,7 +751,7 @@ export default function CaretakerDashboard() {
                                                     alert('Alert email has been sent!');
                                                 }
                                             }}
-                                            className="bg-[#55a075] hover:bg-[#448b63] text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-transform"
+                                            className="bg-[#55a075] hover:bg-[#448b63] text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-transform h-9 px-4 text-xs md:h-10 md:px-6 md:text-sm"
                                         >
                                             Send Reminder Email
                                         </Button>
