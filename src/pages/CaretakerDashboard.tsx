@@ -1,6 +1,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import emailjs from "@emailjs/browser";
 import { supabase } from "@/lib/supabase";
 import {
     Flame,
@@ -21,7 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import Calendar from "@/components/Calendar";
-import { format, subDays, isPast } from "date-fns";
+import { format, subDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -385,6 +386,32 @@ export default function CaretakerDashboard() {
         updateSettingsMutation.mutate();
     };
 
+    const sendEmail = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        emailjs.send(
+            import.meta.env.VITE_EMAILJS_SERVICE_ID,
+            import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+            {
+                caretaker_email: caretakerEmail,
+                patient_name: session?.user?.user_metadata?.full_name || 'Patient',
+                stats: stats.rate + '% (' + stats.streak + '-day streak)',
+                medicine_name: "",
+                schedule_time: ""
+
+            },
+		    {publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY}
+        )
+        .then(
+            () => {
+                alert("Email sent successfully");
+            },
+            (error) => {
+                alert("Failed to send email");
+                console.error(error);
+            }
+        );
+    }
+
     return (
         <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-10 animate-fade-in pb-20 font-sans">
             {/* Caretaker Header & Stats Card */}
@@ -453,6 +480,10 @@ export default function CaretakerDashboard() {
                         {filteredMedications?.map((med) => {
                             const taken = isTaken(med.id)
                             const style = getMedIcon(med.reminder_time)
+                            const todayStr = format(new Date(), "yyyy-MM-dd")
+                            // @ts-ignore
+                            const isMedInPast = med.target_date && med.target_date < todayStr
+                            
                             return (
                                 <div key={med.id} className="p-6 flex flex-col sm:flex-row items-center sm:justify-between gap-4 sm:gap-0 hover:bg-slate-50/50 transition-all">
                                     <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto">
@@ -468,8 +499,7 @@ export default function CaretakerDashboard() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                                        {/* @ts-ignore */}
-                                        {!isPast(med.target_date) &&
+                                        {!isMedInPast &&
                                             <button
                                                 onClick={() => handleDeleteMedication(med.id)}
                                                 className="h-8 w-8 flex items-center justify-center rounded-xl bg-slate-50 text-rose-400 hover:bg-rose-50 hover:text-red-500 transition-all border border-slate-100 shrink-0"
@@ -741,20 +771,13 @@ export default function CaretakerDashboard() {
                                                 An automatic alert email will be sent to the caretaker email after {alertDelay} delay if medication is missed.
                                             </p>
                                             <p className="text-sm text-slate-500 font-medium mt-1">
-                                                To send a reminder email, click the button below.
+                                                To send a reminder email now, click the button below.
                                             </p>
                                         </div>
                                     </div>
                                     <div className="pl-[52px]">
                                         <Button
-                                            onClick={async () => {
-                                                const { error } = await supabase.functions.invoke('check-missed-meds');
-                                                if (error) {
-                                                    alert('Error sending alert: ' + error.message);
-                                                } else {
-                                                    alert('Alert email has been sent!');
-                                                }
-                                            }}
+                                        onClick={sendEmail}
                                             className="bg-[#55a075] hover:bg-[#448b63] text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-transform h-9 px-4 text-xs md:h-10 md:px-6 md:text-sm"
                                         >
                                             Send Reminder Email
@@ -775,9 +798,9 @@ export default function CaretakerDashboard() {
                                             <p className="text-sm font-bold text-slate-700">Subject: Medication Alert - {session?.user?.user_metadata?.full_name || 'User'}</p>
                                         </div>
                                         <div className="text-sm text-slate-500 space-y-4 leading-relaxed font-medium">
-                                            <p>Hello.</p>
-                                            <p>This is a reminder that {session?.user?.user_metadata?.full_name || 'User'} has not taken their medication today.</p>
-                                            <p>Please check with them to ensure they take their prescribed medication.</p>
+                                            <p>Hello,</p>
+                                            <p>This is a reminder that {session?.user?.user_metadata?.full_name || 'User'} has not taken their medication today by the scheduled time.</p>
+                                            <p>Please check on the patient ensuring they take their medication.</p>
                                             <p className="text-slate-400">Current adherence rate: {stats.rate}% ({stats.streak}-day streak)</p>
                                         </div>
                                     </div>

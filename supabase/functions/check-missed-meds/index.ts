@@ -2,7 +2,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const EMAILJS_SERVICE_ID = Deno.env.get("EMAILJS_SERVICE_ID");
+const EMAILJS_TEMPLATE_ID = Deno.env.get("EMAILJS_TEMPLATE_ID");
+const EMAILJS_PUBLIC_KEY = Deno.env.get("EMAILJS_PUBLIC_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -24,7 +26,7 @@ serve(async (req) => {
     // 1. Fetch ALL relevant profiles (alerts enabled)
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("id, caretaker_email, alert_delay")
+      .select("id, full_name, caretaker_email, alert_delay")
       .not("caretaker_email", "is", null)
       .not("alert_delay", "is", null);
 
@@ -133,77 +135,40 @@ serve(async (req) => {
         if (alertsToSend.length > 0) {
             // Process emails in parallel
             await Promise.all(alertsToSend.map(async ({ med, logAction }) => {
-                 // Send Email
-                 if (RESEND_API_KEY) {
+                 // Send Email using EmailJS REST API
+                 if (EMAILJS_SERVICE_ID && EMAILJS_PUBLIC_KEY && EMAILJS_TEMPLATE_ID) {
                     try {
-                        await fetch("https://api.resend.com/emails", {
+                        const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",
-                                "Authorization": `Bearer ${RESEND_API_KEY}`,
                             },
                             body: JSON.stringify({
-                                from: "PillTime <onboarding@resend.dev>",
-                                to: [profile.caretaker_email],
-                                subject: `🔴 Missed Medication Alert: ${med.name}`,
-                                html: `
-                                <!DOCTYPE html>
-                                <html>
-                                <head>
-                                    <style>
-                                        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; }
-                                        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; }
-                                        .header { background-color: #ef4444; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
-                                        .content { padding: 20px; }
-                                        .med-card { background-color: #feba7433; border: 1px solid #fdba74; padding: 15px; border-radius: 8px; margin: 15px 0; }
-                                        .label { font-size: 12px; text-transform: uppercase; color: #666; font-weight: bold; }
-                                        .value { font-size: 18px; font-weight: 600; color: #000; }
-                                        .footer { text-align: center; font-size: 12px; color: #999; margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; }
-                                    </style>
-                                </head>
-                                <body>
-                                    <div class="container">
-                                        <div class="header">
-                                            <h1 style="margin:0;">⚠️ Missed Medication Alert</h1>
-                                        </div>
-                                        <div class="content">
-                                            <p>Hello,</p>
-                                            <p>This is an automated alert to inform you that the following medication has <strong>not been marked as taken</strong> by the scheduled time.</p>
-                                            
-                                            <div class="med-card">
-                                                <div>
-                                                    <span class="label">Medication</span><br>
-                                                    <span class="value">${med.name}</span>
-                                                </div>
-                                                <div style="margin-top: 10px;">
-                                                    <span class="label">Scheduled Time</span><br>
-                                                    <span class="value">${med.reminder_time}</span>
-                                                </div>
-                                                <div style="margin-top: 10px;">
-                                                    <span class="label">Patient ID</span><br>
-                                                    <span class="value">${profile.id}</span>
-                                                </div>
-                                            </div>
-
-                                            <p>Please check on the patient ensuring they take their medication.</p>
-                                        </div>
-                                        <div class="footer">
-                                            <p>Sent via PillTime Alert System</p>
-                                        </div>
-                                    </div>
-                                </body>
-                                </html>
-                                `,
+                                service_id: EMAILJS_SERVICE_ID,
+                                template_id: EMAILJS_TEMPLATE_ID,
+                                user_id: EMAILJS_PUBLIC_KEY,
+                                template_params: {
+                                    caretaker_email: profile.caretaker_email,
+                                    medicine_name: med.name,
+                                    patient_name: profile.full_name || "Patient",
+                                    schedule_time: med.reminder_time
+                                },
                             }),
                         });
+
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`EmailJS API error: ${response.status} ${errorText}`);
+                        }
+
                         processedResults.push({ user: profile.id, med: med.name, status: "sent" });
                     } catch (e) {
                          console.error("Email failed", e);
                          return; // Don't update DB if email failed
                     }
                  } else {
-                     console.log("No Resend Key");
-                     processedResults.push({ user: profile.id, med: med.name, status: "skipped_no_key" });
+                     console.log("Missing EmailJS Configuration");
+                     processedResults.push({ user: profile.id, med: med.name, status: "skipped_missing_config" });
                  }
 
                  // Update DB
