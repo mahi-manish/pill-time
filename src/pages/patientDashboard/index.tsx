@@ -253,22 +253,30 @@ export default function PatientDashboard() {
                 <div className="bg-[#e6e6fa] rounded-[24px] p-6 shadow-sm border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4">
                     <div className="flex items-start justify-between gap-8">
                         {/* Today's Dosage */}
-                        <div className="space-y-2">
-                            <p className="text-sm font-medium text-slate-500">Today's Dosage:</p>
-                            <div className="text-3xl font-bold text-slate-700">{stats.taken}/{stats.today}</div>
+                        <div>
+                            <p className="text-sm font-medium text-slate-500 mb-1">Today's Progress:</p>
+                            <div className="flex items-center gap-2">
+                                <p className="text-2xl font-bold text-slate-700">{stats.taken}/{stats.today}</p>
+                                {stats.taken >= 0 && stats.taken === stats.today && (
+                                <div className="h-4 w-4 ml-2 flex items-center justify-center rounded-full transition-all shadow-sm bg-emerald-500 text-white">
+                                    <Check className="w-3 h-3 stroke-[3]" />
+                                </div>
+                            )}
+                            </div>
+                            <p className="text-xs text-slate-400 mt-none pt-none ml-1">Dosage taken</p>
                         </div>
 
                         {/* Adherence Rate */}
                         <div className="space-y-2">
                             <p className="text-sm font-medium text-slate-500">Adherence Rate:</p>
-                            <div className="text-3xl font-bold text-slate-700">{stats.rate}%</div>
+                            <div className="text-2xl font-bold text-slate-700">{stats.rate}%</div>
                             <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2 overflow-hidden">
                                 <div
                                     className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
                                     style={{ width: `${stats.rate}%` }}
                                 />
                             </div>
-                            <p className="text-xs font-medium text-slate-500 mt-1">Total dosage logs</p>
+                            <p className="text-xs text-slate-400 mt-1">Total dosage logs</p>
                         </div>
 
                         {/* Streak */}
@@ -277,7 +285,7 @@ export default function PatientDashboard() {
                                 <span className="text-sm font-medium text-slate-500">Streak:</span>
                                 <Flame className="w-5 h-5 text-orange-500 fill-orange-500 animate-pulse" />
                             </div>
-                            <div className="text-2xl font-bold text-slate-700">{stats.streak} Days</div>
+                            <div className="text-2xl font-bold text-slate-700">{stats.streak} <span className="text-sm font-semibold text-slate-600">Day(s)</span></div>
                         </div>
                     </div>
                 </div>

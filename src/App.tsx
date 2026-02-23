@@ -1,9 +1,9 @@
 import { Routes, Route, Navigate } from "react-router-dom"
-import Layout from "./components/Layout"
-import Login from "./pages/Login"
-import Signup from "./pages/Signup"
-import Dashboard from "./pages/Dashboard"
-import { useAuth, AuthProvider } from "./context/AuthContext"
+import Layout from "@/components/Layout"
+import Login from "@/pages/login"
+import Signup from "@/pages/signup"
+import Dashboard from "@/pages/dashboard"
+import { useAuth, AuthProvider } from "@/context/AuthContext"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth()

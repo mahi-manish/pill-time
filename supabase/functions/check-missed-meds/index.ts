@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.21.0";
 const EMAILJS_SERVICE_ID = Deno.env.get("EMAILJS_SERVICE_ID");
 const EMAILJS_TEMPLATE_ID = Deno.env.get("EMAILJS_TEMPLATE_ID");
 const EMAILJS_PUBLIC_KEY = Deno.env.get("EMAILJS_PUBLIC_KEY");
+const EMAILJS_PRIVATE_KEY = Deno.env.get("EMAILJS_PRIVATE_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -39,12 +40,10 @@ serve(async (req) => {
 
     const now = new Date();
     
-    // FIX: Handle Timezone (Assuming IST +05:30 based on user location)
-    // In a production app, we should store user's timezone in 'profiles'.
+    // Handle Timezone (Assuming IST +05:30)
     const TIMEZONE_OFFSET_STR = "+05:30"; 
     
     // Calculate 'todayStr' based on User's Timezone, not UTC
-    // We can use Intl (if available) or manual offset
     // Manual Offset for IST: UTC + 5.5h
     const userNow = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
     const todayStr = userNow.toISOString().split("T")[0]; // YYYY-MM-DD in IST
@@ -88,7 +87,7 @@ serve(async (req) => {
              // reminder_time is "HH:MM" in User's Local Time
              // We construct an ISO string with the Offset to get the correct UTC timestamp
              
-            const reminderIso = `${todayStr}T${med.reminder_time}:00${TIMEZONE_OFFSET_STR}`;
+            const reminderIso = `${todayStr}T${med.reminder_time}${TIMEZONE_OFFSET_STR}`;
             const reminderDate = new Date(reminderIso);
             
             // If date is invalid (backup)
@@ -136,7 +135,7 @@ serve(async (req) => {
             // Process emails in parallel
             await Promise.all(alertsToSend.map(async ({ med, logAction }) => {
                  // Send Email using EmailJS REST API
-                 if (EMAILJS_SERVICE_ID && EMAILJS_PUBLIC_KEY && EMAILJS_TEMPLATE_ID) {
+                 if (EMAILJS_SERVICE_ID && EMAILJS_PUBLIC_KEY && EMAILJS_TEMPLATE_ID && EMAILJS_PRIVATE_KEY) {
                     try {
                         const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
                             method: "POST",
@@ -147,11 +146,13 @@ serve(async (req) => {
                                 service_id: EMAILJS_SERVICE_ID,
                                 template_id: EMAILJS_TEMPLATE_ID,
                                 user_id: EMAILJS_PUBLIC_KEY,
+                                accessToken: EMAILJS_PRIVATE_KEY,
                                 template_params: {
                                     caretaker_email: profile.caretaker_email,
                                     medicine_name: med.name,
                                     patient_name: profile.full_name || "Patient",
-                                    schedule_time: med.reminder_time
+                                    schedule_time: med.reminder_time,
+                                    stats: ""
                                 },
                             }),
                         });

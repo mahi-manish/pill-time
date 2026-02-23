@@ -1,7 +1,7 @@
 import { useAuth } from "@/context/AuthContext"
-import PatientDashboard from "./PatientDashboard"
-import CaretakerDashboard from "./CaretakerDashboard"
-import ChooseYourRole from "./ChooseYourRole"
+import PatientDashboard from "@/pages/patientDashboard"
+import CaretakerDashboard from "@/pages/caretakerDashboard"
+import ChooseYourRole from "@/pages/chooseYourRole"
 
 export default function Dashboard() {
     const { userRole, updateRole } = useAuth()
