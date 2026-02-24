@@ -5,7 +5,6 @@ import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import Calendar from "@/components/Calendar"
 import {
-    Flame,
     Check,
     Upload as UploadIcon,
     Sun,
@@ -18,6 +17,8 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
+import StatsCard from "@/components/StatsCard"
+import DashboardHeader from "@/components/DashboardHeader"
 
 interface Medication {
     id: string
@@ -133,6 +134,47 @@ export default function PatientDashboard() {
         });
     }, [medications]);
 
+    const nextMedication = useMemo(() => {
+        if (!medications || medications.length === 0) return null
+        const now = new Date()
+        const currentTime = format(now, "HH:mm")
+        const todayStr = format(now, "yyyy-MM-dd")
+
+        // Find the absolute next occurrence for each medication
+        const nextOccurrences = medications.map(med => {
+            // @ts-ignore
+            const targetDate = med.target_date
+            
+            if (targetDate) {
+                if (targetDate > todayStr) {
+                    return { med, nextDateTime: `${targetDate}T${med.reminder_time}` }
+                } else if (targetDate === todayStr && med.reminder_time > currentTime) {
+                    return { med, nextDateTime: `${targetDate}T${med.reminder_time}` }
+                }
+                return null // Past one-time med
+            } else {
+                // Recurring med - happens daily at reminder_time
+                if (med.reminder_time > currentTime) {
+                    // Next occurrence is later today
+                    return { med, nextDateTime: `${todayStr}T${med.reminder_time}` }
+                } else {
+                    // Next occurrence is tomorrow
+                    const tomorrow = new Date(now)
+                    tomorrow.setDate(tomorrow.getDate() + 1)
+                    const tomorrowStr = format(tomorrow, "yyyy-MM-dd")
+                    return { med, nextDateTime: `${tomorrowStr}T${med.reminder_time}` }
+                }
+            }
+        }).filter((n): n is { med: Medication; nextDateTime: string } => n !== null)
+
+        if (nextOccurrences.length === 0) return null
+
+        // Sort all future occurrences by date and time, then pick the earliest one
+        nextOccurrences.sort((a, b) => a.nextDateTime.localeCompare(b.nextDateTime))
+        
+        return nextOccurrences[0].med
+    }, [medications])
+
     const stats = useMemo(() => {
         // Stats for "Today" (Actual current date)
         const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -193,12 +235,6 @@ export default function PatientDashboard() {
         }
     }, [todayMedications, allLogs, medications])
 
-    const getGreeting = () => {
-        const hour = new Date().getHours()
-        if (hour < 12) return "Good Morning"
-        if (hour < 18) return "Good Afternoon"
-        return "Good Evening"
-    }
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -234,61 +270,20 @@ export default function PatientDashboard() {
     }
 
     return (
-        <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-8 animate-fade-in pb-0 font-sans">
+        <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-6 animate-fade-in pb-0 font-sans">
             {/* Patient Header & Stats Card */}
             <div className="flex flex-col lg:flex-row items-start justify-between gap-6 pb-2">
-                {/* Left Side: Greeting & Role */}
-                <div className="space-y-1 pt-8">
-                    <p className="text-sm font-medium text-slate-500">{getGreeting()},</p>
-                    <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
-                        {session?.user?.user_metadata?.full_name || 'User'}
-                    </h1>
-                    <div className="flex items-center gap-2 pt-1">
-                        <span className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-bold tracking-wider">
-                            Patient
-                        </span>
-                    </div>
-                </div>
+                <DashboardHeader 
+                    fullName={session?.user?.user_metadata?.full_name} 
+                    role="Patient" 
+                />
                 {/* Right Side: Useful Stats Card */}
-                <div className="bg-[#e6e6fa] rounded-[24px] p-6 shadow-sm border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4">
-                    <div className="flex items-start justify-between gap-8">
-                        {/* Today's Dosage */}
-                        <div>
-                            <p className="text-sm font-medium text-slate-500 mb-1">Today's Progress:</p>
-                            <div className="flex items-center gap-2">
-                                <p className="text-2xl font-bold text-slate-700">{stats.taken}/{stats.today}</p>
-                                {stats.taken >= 0 && stats.taken === stats.today && (
-                                <div className="h-4 w-4 ml-2 flex items-center justify-center rounded-full transition-all shadow-sm bg-emerald-500 text-white">
-                                    <Check className="w-3 h-3 stroke-[3]" />
-                                </div>
-                            )}
-                            </div>
-                            <p className="text-xs text-slate-400 mt-none pt-none ml-1">Dosage taken</p>
-                        </div>
-
-                        {/* Adherence Rate */}
-                        <div className="space-y-2">
-                            <p className="text-sm font-medium text-slate-500">Adherence Rate:</p>
-                            <div className="text-2xl font-bold text-slate-700">{stats.rate}%</div>
-                            <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2 overflow-hidden">
-                                <div
-                                    className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
-                                    style={{ width: `${stats.rate}%` }}
-                                />
-                            </div>
-                            <p className="text-xs text-slate-400 mt-1">Total dosage logs</p>
-                        </div>
-
-                        {/* Streak */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-end gap-2">
-                                <span className="text-sm font-medium text-slate-500">Streak:</span>
-                                <Flame className="w-5 h-5 text-orange-500 fill-orange-500 animate-pulse" />
-                            </div>
-                            <div className="text-2xl font-bold text-slate-700">{stats.streak} <span className="text-sm font-semibold text-slate-600">Day(s)</span></div>
-                        </div>
-                    </div>
-                </div>
+                <StatsCard 
+                    variant="patient"
+                    progress={{ taken: stats.taken, total: stats.today }}
+                    streak={stats.streak}
+                    nextMedication={nextMedication ? { time: nextMedication.reminder_time, name: nextMedication.name } : null}
+                />
             </div>
 
             {/* Middle Section: Schedule + Upload */}

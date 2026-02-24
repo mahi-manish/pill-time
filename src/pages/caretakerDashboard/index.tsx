@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import emailjs from "@emailjs/browser";
 import { supabase } from "@/lib/supabase";
 import {
-    Flame,
     Sun,
     CloudIcon,
     Moon,
@@ -22,6 +21,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import Calendar from "@/components/Calendar";
+import StatsCard from "@/components/StatsCard";
+import DashboardHeader from "@/components/DashboardHeader";
 import { format, subDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -173,6 +174,25 @@ export default function CaretakerDashboard() {
         const safeMedications = medications || [];
         const safeAllLogs = allLogs || [];
 
+        // Missed Doses calculation (last 48 hours)
+        const now = new Date();
+        const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+        let missedDosesCount = 0;
+
+        safeAllLogs.forEach(log => {
+            if (!log.taken) {
+                const med = safeMedications.find(m => m.id === log.medication_id);
+                if (med) {
+                    // Combine date and reminder_time
+                    // reminder_time is in "HH:mm" or "HH:mm:ss" format
+                    const scheduledAt = new Date(`${log.date}T${med.reminder_time}`);
+                    if (scheduledAt >= fortyEightHoursAgo && scheduledAt < now) {
+                        missedDosesCount++;
+                    }
+                }
+            }
+        });
+
         if (safeMedications.length > 0) {
             // Check from today (i=0) backwards
             for (let i = 0; i <= 365; i++) {
@@ -201,8 +221,8 @@ export default function CaretakerDashboard() {
                         // as the day might not be over.
                     }
 
-                    // Adherence (Last 30 days)
-                    if (i < 30) { // Changed from i <= 30 to i < 30 to get exactly 30 days (0-29)
+                    // Adherence (Last 7 days)
+                    if (i < 7) { // Changed from i <= 7 to i < 7 to get exactly 7 days (0-6)
                         totalScheduledPast += medsForDay.length;
                         totalTakenPast += Math.min(dayTakenCount, medsForDay.length);
                     }
@@ -216,16 +236,11 @@ export default function CaretakerDashboard() {
             today: medsTodayCount,
             taken: dosesTakenToday,
             rate: rate,
-            streak: calculatedStreak
+            streak: calculatedStreak,
+            missedDoses: missedDosesCount
         }
     }, [todayMedications, allLogs, medications])
 
-    const getGreeting = () => {
-        const hour = new Date().getHours()
-        if (hour < 12) return "Good Morning"
-        if (hour < 18) return "Good Afternoon"
-        return "Good Evening"
-    }
 
     const getMedIcon = (time: string) => {
         const hour = parseInt(time.split(':')[0])
@@ -413,64 +428,23 @@ export default function CaretakerDashboard() {
     }
 
     return (
-        <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-10 animate-fade-in pb-20 font-sans">
+        <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-6 animate-fade-in pb-20 font-sans">
             {/* Caretaker Header & Stats Card */}
             <div className="flex flex-col lg:flex-row items-start justify-between gap-6 pb-2">
-                {/* Left Side: Greeting & Role */}
-                <div className="space-y-1 pt-8">
-                    <p className="text-sm font-medium text-slate-500">{getGreeting()},</p>
-                    <h1 className="text-3xl font-bold text-slate-800 tracking-tight">
-                        {session?.user?.user_metadata?.full_name || 'User'}
-                    </h1>
-                    <div className="flex items-center gap-2 pt-1">
-                        <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-bold tracking-wider">
-                            Caretaker
-                        </span>
-                    </div>
-                </div>
+                <DashboardHeader 
+                    fullName={session?.user?.user_metadata?.full_name} 
+                    role="Caretaker" 
+                />
                 {/* Right Side: Useful Stats Card */}
-                <div className="bg-[#b0e0e6] rounded-[24px] p-6 shadow-sm hover:shadow-md border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4">
-                    <div className="flex items-start justify-between gap-10">
-                        {/* Today's Dosage */}
-                        <div>
-                            <p className="text-sm font-medium text-slate-500 mb-1">Today's Progress:</p>
-                            <div className="flex items-center gap-2">
-                                <p className="text-2xl font-bold text-slate-700">{stats.taken}/{stats.today}</p>
-                                {stats.taken >= 0 && stats.taken === stats.today && (
-                                <div className="h-4 w-4 ml-2 flex items-center justify-center rounded-full transition-all shadow-sm bg-emerald-500 text-white">
-                                    <Check className="w-3 h-3 stroke-[3]" />
-                                </div>
-                            )}
-                            </div>
-                            <p className="text-xs text-slate-400 mt-none pt-none ml-1">Dosage taken</p>
-                        </div>
-
-                        {/* Adherence Rate */}
-                        <div className="space-y-2">
-                            <p className="text-sm font-medium text-slate-500">Adherence Rate:</p>
-                            <div className="text-2xl font-bold text-slate-700">{stats.rate}%</div>
-                            <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2 overflow-hidden">
-                                <div
-                                    className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
-                                    style={{ width: `${stats.rate}%` }}
-                                />
-                            </div>
-                            <p className="text-xs font-medium text-slate-400 mt-1">Total dosage logs</p>
-                        </div>
-
-                        {/* Streak */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-end gap-2">
-                                <span className="text-sm font-medium text-slate-500">Streak:</span>
-                                <Flame className="w-5 h-5 text-orange-500 fill-orange-500 animate-pulse" />
-                            </div>
-                            <div className="text-2xl font-bold text-slate-700">{stats.streak} <span className="text-sm font-semibold text-slate-600">Day(s)</span></div>
-                        </div>
-                    </div>
-                </div>
+                <StatsCard 
+                    variant="caretaker"
+                    progress={{ taken: stats.taken, total: stats.today }}
+                    adherenceRate={stats.rate}
+                    missedDoses={stats.missedDoses}
+                />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Left Side: Medication Schedule */}
                 <div className="bg-white rounded-[24px] p-0 shadow-sm hover:shadow-md overflow-hidden h-fit">
                     <div className="p-8 flex items-center justify-between bg-white">
@@ -539,8 +513,8 @@ export default function CaretakerDashboard() {
             </div>
 
             {/* New Medication Schedule Form Section */}
-            <div className="mt-4 animate-slide-up delay-200">
-                <div className="realistic-card p-0 overflow-hidden bg-white max-w-[900px]">
+            <div className="mt-3 animate-slide-up delay-200">
+                <div className="realistic-card p-0 overflow-hidden bg-white max-w-[930px]">
                     {/* Tabs */}
                     <div className="flex bg-slate-50 border-b border-slate-100 h-11">
                         <button
