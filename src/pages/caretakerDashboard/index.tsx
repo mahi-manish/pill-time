@@ -5,10 +5,6 @@ import emailjs from "@emailjs/browser";
 import { supabase } from "@/lib/supabase";
 import {
     Sun,
-    CloudIcon,
-    Moon,
-    Bed,
-    Check,
     X,
     Clock,
     Calendar as CalendarIcon,
@@ -16,13 +12,13 @@ import {
     Pill,
     Bell,
     Mail,
-    Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import Calendar from "@/components/Calendar";
 import StatsCard from "@/components/StatsCard";
 import DashboardHeader from "@/components/DashboardHeader";
+import MedicationSchedule from "@/components/MedicationSchedule";
 import { format, subDays } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -242,15 +238,8 @@ export default function CaretakerDashboard() {
     }, [todayMedications, allLogs, medications])
 
 
-    const getMedIcon = (time: string) => {
-        const hour = parseInt(time.split(':')[0])
-        if (hour < 10) return { icon: <Sun className="w-5 h-5" />, color: "text-amber-500", bg: "bg-amber-50" }
-        if (hour < 15) return { icon: <CloudIcon className="w-5 h-5" />, color: "text-blue-500", bg: "bg-blue-50" }
-        if (hour < 20) return { icon: <Moon className="w-5 h-5" />, color: "text-indigo-500", bg: "bg-indigo-50" }
-        return { icon: <Bed className="w-5 h-5" />, color: "text-slate-500", bg: "bg-slate-50" }
-    }
 
-    const isTaken = (medId: string) => currentLogs?.some((log) => log.medication_id === medId && log.taken)
+    const isTaken = (medId: string) => !!currentLogs?.some((log) => log.medication_id === medId && log.taken)
 
 
     const addMedicationMutation = useMutation({
@@ -446,59 +435,13 @@ export default function CaretakerDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Left Side: Medication Schedule */}
-                <div className="bg-white rounded-[24px] p-0 shadow-sm hover:shadow-md overflow-hidden h-fit">
-                    <div className="p-8 flex items-center justify-between bg-white">
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Medication Schedule</h2>
-                            <p className="text-xs font-medium text-slate-400 mt-1 tracking-widest">{format(selectedDate, "EEEE, MMMM dd, yyyy")}</p>
-                        </div>
-                    </div>
-                    <div className="divide-y divide-slate-100">
-                        {filteredMedications?.map((med) => {
-                            const taken = isTaken(med.id)
-                            const style = getMedIcon(med.reminder_time)
-                            const todayStr = format(new Date(), "yyyy-MM-dd")
-                            // @ts-ignore
-                            const isMedInPast = med.target_date && med.target_date < todayStr
-                            
-                            return (
-                                <div key={med.id} className="p-6 flex flex-col sm:flex-row items-center sm:justify-between gap-4 sm:gap-0 hover:bg-slate-50/50 transition-all">
-                                    <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto">
-                                        <div className={cn("shrink-0 h-12 w-12 flex items-center justify-center rounded-xl border border-slate-50 shadow-sm", style.bg, style.color)}>
-                                            {style.icon}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                                                <span className="text-xs font-bold text-blue-400 font-sans whitespace-nowrap">{med.reminder_time.slice(0, 5)}</span>
-                                                <h3 className="text-lg font-bold text-slate-800 truncate">{med.name}</h3>
-                                            </div>
-                                            <p className="text-xs font-medium text-slate-400 mt-0.5 truncate max-w-[200px] sm:max-w-none">{med.dosage} • {med.instructions || 'Take as prescribed'}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                                        {!isMedInPast &&
-                                            <button
-                                                onClick={() => handleDeleteMedication(med.id)}
-                                                className="h-8 w-8 flex items-center justify-center rounded-xl bg-slate-50 text-rose-400 hover:bg-rose-50 hover:text-red-500 transition-all border border-slate-100 shrink-0"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        }
-                                        <div className={cn(
-                                            "h-6 w-6 flex items-center justify-center rounded-full transition-all shadow-sm shrink-0",
-                                            taken ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-300"
-                                        )}>
-                                            {taken ? <Check className="w-4 h-4 stroke-[3]" /> : <X className="w-4 h-4" />}
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        })}
-                        {filteredMedications?.length === 0 && (
-                            <div className="py-20 text-center text-slate-400 tracking-widest text-xs">No medications scheduled</div>
-                        )}
-                    </div>
-                </div>
+                <MedicationSchedule
+                    medications={filteredMedications}
+                    selectedDate={selectedDate}
+                    isTaken={isTaken}
+                    onDelete={handleDeleteMedication}
+                    isCaretaker={true}
+                />
 
                 {/* Right Side: Calendar */}
                 <div className="space-y-8">

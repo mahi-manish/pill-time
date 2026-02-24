@@ -65,7 +65,7 @@ const StatsCard = ({ variant, progress, streak, nextMedication, adherenceRate, m
                             <p className="text-2xl font-bold text-slate-700">{adherenceRate}%</p>
                             <CircularProgress progress={adherenceRate || 0} />
                         </div>
-                        <p className="text-xs font-semibold text-slate-500 mt-none pt-none ml-1">This week</p>
+                        <p className="text-xs font-semibold text-slate-500 mt-none pt-none ml-1">Last 7 days</p>
                     </div>
                 )}
 
@@ -81,7 +81,7 @@ const StatsCard = ({ variant, progress, streak, nextMedication, adherenceRate, m
                     <div className="space-y-1">
                         <p className="text-sm font-medium text-slate-400">Missed Doses:</p>
                         <div className={cn("text-2xl font-bold ", !!missedDoses ? "text-red-500" : "text-slate-700")}>{missedDoses}</div>
-                        <p className="text-xs font-semibold text-slate-500 mt-none pt-none ml-1">In last 48hr</p>
+                        <p className="text-xs font-semibold text-slate-500 mt-none pt-none ml-1">Last 48hr</p>
                     </div>
                 )}
             </div>

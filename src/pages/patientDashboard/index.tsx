@@ -1,48 +1,43 @@
-import { useState, useMemo, useRef } from "react"
-import { format, subDays, isPast, isToday } from "date-fns"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { supabase } from "@/lib/supabase"
-import { Button } from "@/components/ui/button"
-import Calendar from "@/components/Calendar"
+import { useState, useMemo, useRef } from "react";
+import { format, subDays } from "date-fns";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import Calendar from "@/components/Calendar";
 import {
-    Check,
     Upload as UploadIcon,
-    Sun,
-    CloudIcon,
-    Moon,
-    Bed,
     Camera,
     Heart,
     Zap,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useAuth } from "@/context/AuthContext"
-import StatsCard from "@/components/StatsCard"
-import DashboardHeader from "@/components/DashboardHeader"
+} from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import StatsCard from "@/components/StatsCard";
+import DashboardHeader from "@/components/DashboardHeader";
+import MedicationSchedule from "@/components/MedicationSchedule";
 
 interface Medication {
-    id: string
-    name: string
-    dosage: string
-    reminder_time: string
-    instructions?: string
+    id: string;
+    name: string;
+    dosage: string;
+    reminder_time: string;
+    instructions?: string;
 }
 
 interface MedicationLog {
-    medication_id: string
-    taken: boolean
-    date: string
-    image_url?: string
+    medication_id: string;
+    taken: boolean;
+    date: string;
+    image_url?: string;
 }
 
 export default function PatientDashboard() {
-    const { session } = useAuth()
-    const queryClient = useQueryClient()
-    const [selectedDate, setSelectedDate] = useState(new Date())
-    const [previewImage, setPreviewImage] = useState<string | null>(null)
-    const fileInputRef = useRef<HTMLInputElement>(null)
+    const { session } = useAuth();
+    const queryClient = useQueryClient();
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const targetUserId = session?.user.id
+    const targetUserId = session?.user.id;
 
     // Data Fetching
     const { data: medications } = useQuery({
@@ -110,7 +105,7 @@ export default function PatientDashboard() {
         },
     })
 
-    const isTaken = (medId: string) => currentLogs?.some((log) => log.medication_id === medId && log.taken)
+    const isTaken = (medId: string) => !!currentLogs?.some((log) => log.medication_id === medId && log.taken)
 
     const filteredMedications = useMemo(() => {
         if (!medications) return [];
@@ -261,13 +256,6 @@ export default function PatientDashboard() {
         }
     }
 
-    const getMedIcon = (time: string) => {
-        const hour = parseInt(time.split(':')[0])
-        if (hour < 10) return { icon: <Sun className="w-5 h-5" />, color: "text-amber-500", bg: "bg-amber-50" }
-        if (hour < 15) return { icon: <CloudIcon className="w-5 h-5" />, color: "text-blue-500", bg: "bg-blue-50" }
-        if (hour < 20) return { icon: <Moon className="w-5 h-5" />, color: "text-indigo-500", bg: "bg-indigo-50" }
-        return { icon: <Bed className="w-5 h-5" />, color: "text-slate-500", bg: "bg-slate-50" }
-    }
 
     return (
         <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-6 animate-fade-in pb-0 font-sans">
@@ -289,80 +277,12 @@ export default function PatientDashboard() {
             {/* Middle Section: Schedule + Upload */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                 {/* Schedule Table */}
-                <div className="lg:col-span-7 bg-white border border-slate-100 rounded-[24px] p-0 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="p-8 flex items-center justify-between bg-white">
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-800 tracking-tight">Medication Schedule</h2>
-                            <p className="text-xs font-medium text-slate-400 mt-1 tracking-widest">{format(selectedDate, "EEEE, MMMM dd, yyyy")}</p>
-                        </div>
-                        <div className="flex gap-2">
-                            {isToday(selectedDate) ? (
-                                <div className="h-8 px-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center text-[10px] font-bold text-blue-600 tracking-wider">Active Routine</div>
-                            ) : isPast(selectedDate) ? (
-                                <div className="h-8 px-3 bg-slate-50 border border-slate-100 rounded-lg flex items-center text-[10px] font-bold text-slate-400 tracking-wider">Past Routine</div>
-                            ) : (
-                                <div className="h-8 px-3 bg-slate-50 border border-slate-100 rounded-lg flex items-center text-[10px] font-bold text-slate-400 tracking-wider">Future Routine</div>
-                            )}
-                        </div>
-                    </div>
-                    <div className="divide-y divide-slate-100">
-                        {filteredMedications?.map((med) => {
-                            const taken = isTaken(med.id)
-                            const style = getMedIcon(med.reminder_time)
-                            return (
-                                <div key={med.id} className="p-6 flex flex-col sm:flex-row items-center sm:justify-between gap-4 sm:gap-0 hover:bg-slate-50/50 transition-all">
-                                    <div className="flex items-center gap-4 sm:gap-6 w-full sm:w-auto">
-                                        <div className={cn("shrink-0 h-12 w-12 flex items-center justify-center rounded-xl border border-slate-50 shadow-sm", style.bg, style.color)}>
-                                            {style.icon}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                                                <span className="text-xs font-bold text-blue-400 font-sans whitespace-nowrap">{med.reminder_time.slice(0, 5)}</span>
-                                                <h3 className="text-lg font-bold text-slate-800 truncate">{med.name}</h3>
-                                            </div>
-                                            <p className="text-xs font-medium text-slate-400 mt-0.5 truncate max-w-[200px] sm:max-w-none">{med.dosage} • {med.instructions || 'Take as prescribed'}</p>
-                                        </div>
-                                    </div>
-                                    <div
-                                        onClick={() => {
-                                            if (isToday(selectedDate)) {
-                                                toggleTaken.mutate({ medId: med.id, taken: !taken })
-                                            }
-                                        }}
-                                        className={cn(
-                                            "flex items-center gap-1.5 px-2 py-0 rounded-full cursor-pointer transition-all border select-none h-[26px] w-fit shrink-0",
-                                            taken
-                                                ? "bg-emerald-50/50 border-emerald-100"
-                                                : "bg-slate-50/30 border-slate-100",
-                                            !isToday(selectedDate) && "opacity-40 pointer-events-none green"
-                                        )}
-                                    >
-                                        <span className={cn(
-                                            "text-[8.5px] font-black tracking-tight",
-                                            taken ? "text-emerald-600" : "text-slate-400"
-                                        )}>
-                                            {taken ? "Done" : "Mark"}
-                                        </span>
-                                        <div className={cn(
-                                            "w-6 h-3.5 rounded-full relative transition-all duration-300",
-                                            taken ? "bg-emerald-500" : "bg-slate-200"
-                                        )}>
-                                            <div className={cn(
-                                                "absolute top-0.5 left-0.5 w-2.5 h-2.5 rounded-full bg-white transition-all duration-300 flex items-center justify-center",
-                                                taken ? "translate-x-2.5" : "translate-x-0"
-                                            )}>
-                                                {taken && <Check className="w-1.5 h-1.5 text-emerald-500 stroke-[5]" />}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        })}
-                        {filteredMedications?.length === 0 && (
-                            <div className="py-20 text-center text-slate-400 tracking-widest text-xs">No medications scheduled</div>
-                        )}
-                    </div>
-                </div>
+                <MedicationSchedule
+                    medications={filteredMedications}
+                    selectedDate={selectedDate}
+                    isTaken={isTaken}
+                    onToggleTaken={(medId, taken) => toggleTaken.mutate({ medId, taken: !taken })}
+                />
 
                 {/* Upload Section */}
                 <div className="lg:col-span-5 bg-white border border-slate-100 rounded-[24px] p-10 flex flex-col gap-8 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
