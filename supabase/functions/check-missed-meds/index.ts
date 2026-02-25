@@ -27,7 +27,8 @@ serve(async (req) => {
     // 1. Fetch ALL relevant profiles (alerts enabled)
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("id, full_name, caretaker_email, alert_delay")
+      .select("id, full_name, caretaker_email, alert_delay, send_alert")
+      .eq("send_alert", true)
       .not("caretaker_email", "is", null)
       .not("alert_delay", "is", null);
 

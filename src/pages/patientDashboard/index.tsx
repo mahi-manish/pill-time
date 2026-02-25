@@ -258,7 +258,7 @@ export default function PatientDashboard() {
 
 
     return (
-        <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-6 animate-fade-in pb-0 font-sans">
+        <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-6 animate-fade-in pb-none font-sans">
             {/* Patient Header & Stats Card */}
             <div className="flex flex-col lg:flex-row items-start justify-between gap-6 pb-2">
                 <DashboardHeader 

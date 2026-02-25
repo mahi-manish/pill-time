@@ -12,6 +12,7 @@ import {
     Pill,
     Bell,
     Mail,
+    Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -26,18 +27,18 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 
 interface Medication {
-    id: string
-    name: string
-    dosage: string
-    reminder_time: string
-    instructions?: string
+    id: string;
+    name: string;
+    dosage: string;
+    reminder_time: string;
+    instructions?: string;
 }
 
 interface MedicationLog {
-    medication_id: string
-    taken: boolean
-    date: string
-    image_url?: string
+    medication_id: string;
+    taken: boolean;
+    date: string;
+    image_url?: string;
 }
 
 export default function CaretakerDashboard() {
@@ -58,7 +59,7 @@ export default function CaretakerDashboard() {
 
     // Settings States
     const [caretakerEmail, setCaretakerEmail] = useState("");
-    const [missedAlertsEnabled, setMissedAlertsEnabled] = useState(true);
+    const [missedAlertsEnabled, setMissedAlertsEnabled] = useState(false);
     const [alertDelay, setAlertDelay] = useState("2 hours");
     const [isSavingSettings, setIsSavingSettings] = useState(false);
     const targetUserId = session?.user?.id;
@@ -70,7 +71,7 @@ export default function CaretakerDashboard() {
             if (!targetUserId) return null;
             const { data, error } = await supabase
                 .from("profiles")
-                .select("caretaker_email, alert_delay")
+                .select("caretaker_email, alert_delay, send_alert")
                 .eq("id", targetUserId)
                 .single();
             if (error) throw error;
@@ -82,6 +83,7 @@ export default function CaretakerDashboard() {
     useEffect(() => {
         if (profile) {
             setCaretakerEmail(profile.caretaker_email || "");
+            setMissedAlertsEnabled(profile.send_alert ?? false);
             if (profile.alert_delay) {
                 setAlertDelay(profile.alert_delay);
             }
@@ -368,7 +370,8 @@ export default function CaretakerDashboard() {
                 .from("profiles")
                 .update({
                     caretaker_email: caretakerEmail,
-                    alert_delay: alertDelay
+                    alert_delay: alertDelay,
+                    send_alert: missedAlertsEnabled
                 })
                 .eq("id", session.user.id); // Profile ID matches Auth User ID
             if (error) throw error;
@@ -386,6 +389,12 @@ export default function CaretakerDashboard() {
     });
 
     const handleSaveSettings = () => {
+        setIsSavingSettings(true);
+        updateSettingsMutation.mutate();
+    };
+
+     const handleSendAlerts = () => {
+        setMissedAlertsEnabled(!missedAlertsEnabled);
         setIsSavingSettings(true);
         updateSettingsMutation.mutate();
     };
@@ -417,7 +426,7 @@ export default function CaretakerDashboard() {
     }
 
     return (
-        <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-6 animate-fade-in pb-20 font-sans">
+        <div className="max-w-[1000px] mx-auto px-6 py-6 space-y-6 animate-fade-in pb-none font-sans">
             {/* Caretaker Header & Stats Card */}
             <div className="flex flex-col lg:flex-row items-start justify-between gap-6 pb-2">
                 <DashboardHeader 
@@ -463,19 +472,21 @@ export default function CaretakerDashboard() {
                         <button
                             onClick={() => setActiveTab("schedule")}
                             className={cn(
-                                "px-6 h-full font-bold text-xs tracking-wider transition-all",
+                                "px-6 h-full font-bold text-xs tracking-wider transition-all flex items-center gap-2",
                                 activeTab === "schedule" ? "bg-[#2563eb] text-white" : "bg-transparent text-slate-400 hover:text-slate-600"
                             )}
                         >
+                            <CalendarIcon className="w-4 h-4" />
                             Schedule
                         </button>
                         <button
                             onClick={() => setActiveTab("settings")}
                             className={cn(
-                                "px-6 h-full font-bold text-xs tracking-wider transition-all border-r border-slate-100",
+                                "px-6 h-full font-bold text-xs tracking-wider transition-all border-r border-slate-100 flex items-center gap-2",
                                 activeTab === "settings" ? "bg-[#2563eb] text-white" : "bg-white text-slate-400 hover:text-slate-600"
                             )}
                         >
+                            <Settings className="w-4 h-4" />
                             Settings
                         </button>
                     </div>
@@ -612,7 +623,7 @@ export default function CaretakerDashboard() {
 
                             <div className="space-y-6">
                                 {/* Missed Medication Alerts Toggle */}
-                                <div className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100 space-y-6">
+                                <div className="bg-slate-50/50 rounded-2xl p-6 border border-slate-200 space-y-6">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-start gap-4">
                                             <div className="p-2.5 bg-rose-100/50 rounded-xl">
@@ -624,7 +635,7 @@ export default function CaretakerDashboard() {
                                             </div>
                                         </div>
                                         <div
-                                            onClick={() => setMissedAlertsEnabled(!missedAlertsEnabled)}
+                                            onClick={handleSendAlerts}
                                             className={cn(
                                                 "w-12 h-6 rounded-full p-1 cursor-pointer transition-all duration-300 relative",
                                                 missedAlertsEnabled ? "bg-[#55a075]" : "bg-slate-300"
@@ -645,9 +656,13 @@ export default function CaretakerDashboard() {
                                                     value={caretakerEmail}
                                                     onChange={(e) => setCaretakerEmail(e.target.value)}
                                                     placeholder="caretaker@example.com"
-                                                    className="h-12 border-slate-100 bg-slate-50/30 rounded-xl pr-12 font-medium text-slate-700 shadow-none border-b-2"
+                                                    disabled={!missedAlertsEnabled}
+                                                    className={cn(
+                                                        "h-12 border-slate-100 bg-slate-50/30 rounded-xl pr-12 font-medium text-slate-700 shadow-none border-b-2 transition-opacity",
+                                                        !missedAlertsEnabled && "opacity-50 cursor-not-allowed"
+                                                    )}
                                                 />
-                                                <CalendarIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500/40" />
+                                                <Mail className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500/40" />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
@@ -656,7 +671,11 @@ export default function CaretakerDashboard() {
                                                 <select
                                                     value={alertDelay}
                                                     onChange={(e) => setAlertDelay(e.target.value)}
-                                                    className="w-full h-12 bg-white border border-slate-100 rounded-xl px-4 text-sm font-medium text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/10"
+                                                    disabled={!missedAlertsEnabled}
+                                                    className={cn(
+                                                        "w-full h-12 bg-white border border-slate-100 rounded-xl px-4 text-sm font-medium text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-opacity",
+                                                        !missedAlertsEnabled && "opacity-50 cursor-not-allowed"
+                                                    )}
                                                 >
                                                     <option>10 min</option>
                                                     <option>30 min</option>

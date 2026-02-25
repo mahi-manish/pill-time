@@ -1,13 +1,14 @@
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { Link, useNavigate } from "react-router-dom"
-import { supabase } from "@/lib/supabase"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Mail, Lock, Eye, EyeOff, Pill } from "lucide-react"
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Footer from "@/components/Footer";
+import { Mail, Lock, Eye, EyeOff, Pill } from "lucide-react";
 
 const formSchema = z.object({
     email: z.string().email("Please enter a valid email address"),
@@ -175,6 +176,8 @@ export default function Login() {
                             </p>
                         </div>
                     </div>
+
+                    <Footer />
                 </div>
             </div>
         </div>

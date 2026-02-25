@@ -19,7 +19,7 @@ interface StatsCardProps {
 }
 
 const StatsCard = ({ variant, progress, streak, nextMedication, adherenceRate, missedDoses }: StatsCardProps) => {
-    const bgColor = variant === "patient" ? "bg-[#e6e6fa]" : "bg-[#b0e0e6cc]"
+    const bgColor = variant === "caretaker" ? "bg-[#e6e6fa]" : "bg-[#b0e0e6cc]"
 
     return (
         <div className={`${bgColor} rounded-[24px] p-6 shadow-sm border border-slate-100 w-full lg:w-auto min-w-[320px] flex flex-col justify-between h-auto gap-4`}>

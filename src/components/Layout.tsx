@@ -1,8 +1,9 @@
-import { Link, Outlet, useNavigate } from "react-router-dom"
-import { useAuth } from "@/context/AuthContext"
-import { Button } from "@/components/ui/button"
-import { Pill, LogOut } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Link, Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Pill, Power, User, HeartHandshake } from "lucide-react";
+import { cn } from "@/lib/utils";
+import Footer from "@/components/Footer";
 
 export default function Layout() {
     const { session, signOut, userRole, updateRole } = useAuth()
@@ -21,7 +22,7 @@ export default function Layout() {
     }
 
     return (
-        <div className="min-h-screen bg-[#F3F7FF] font-sans antialiased text-slate-900 selection:bg-blue-600/10 pb-24 md:pb-0">
+        <div className="min-h-screen bg-[#F3F7FF] font-sans antialiased text-slate-900 selection:bg-blue-600/10 pb-8 md:pb-0">
             {/* Header */}
             <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-xl border-b border-slate-200 hidden md:block">
                 <div className="container mx-auto flex h-20 items-center justify-between px-10 max-w-[1200px]">
@@ -43,12 +44,17 @@ export default function Layout() {
                                     size="sm"
                                     onClick={handleRoleSwitch}
                                     className={cn(
-                                        "text-[10px] font-bold font-sans tracking-widest rounded-xl px-4 h-10 transition-all border",
+                                        "text-[10px] font-bold font-sans tracking-widest rounded-xl px-4 h-10 transition-all border flex items-center gap-2",
                                         userRole === 'caretaker'
                                             ? "text-emerald-600 hover:bg-emerald-50 border-emerald-100"
                                             : "text-blue-600 hover:bg-blue-50 border-blue-100"
                                     )}
                                 >
+                                    {userRole === 'caretaker' ? (
+                                        <User className="h-3.5 w-3.5" />
+                                    ) : (
+                                        <HeartHandshake className="h-3.5 w-3.5" />
+                                    )}
                                     Switch to {userRole === 'caretaker' ? 'Patient' : 'Caretaker'}
                                 </Button>
                             )}
@@ -56,8 +62,9 @@ export default function Layout() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={handleLogout}
-                                className="text-[10px] font-bold font-sans tracking-widest text-slate-400 border border-slate-200 hover:border-rose-200 hover:text-rose-600 hover:bg-rose-50 rounded-xl px-4 h-10 transition-all"
+                                className="text-[10px] font-bold font-sans tracking-widest text-slate-400 border border-slate-200 hover:border-rose-200 hover:text-rose-600 hover:bg-rose-50 rounded-xl px-4 h-10 transition-all flex items-center gap-2"
                             >
+                                <Power className="h-3.5 w-3.5" />
                                 Logout
                             </Button>
                         </div>
@@ -65,12 +72,9 @@ export default function Layout() {
                 </div>
             </header>
 
-            <main className="container mx-auto pb-20 px-2 max-w-[1000px]">
+            <main className="container mx-auto pb-10 px-2 max-w-[1000px]">
                 <Outlet />
-
-                <div className="text-center pt-5 opacity-50">
-                    <p className="text-[10px] font-black tracking-[0.15em]">Pill Time • v1.0.0 • Crafted for Medical Precision</p>
-                </div>
+                <Footer />
             </main>
 
             {/* Mobile Bottom Navigation - Pill Time Style */}
@@ -95,12 +99,17 @@ export default function Layout() {
                                 size="sm"
                                 onClick={handleRoleSwitch}
                                 className={cn(
-                                    "h-8 px-3 rounded-lg text-[10px] font-bold tracking-wide border transition-all",
+                                    "h-8 px-3 rounded-lg text-[10px] font-bold tracking-wide border transition-all flex items-center gap-1.5",
                                     userRole === 'caretaker'
                                         ? "text-emerald-600 bg-emerald-50 border-emerald-100"
                                         : "text-blue-600 bg-blue-50 border-blue-100"
                                 )}
                              >
+                                {userRole === 'caretaker' ? (
+                                    <User className="h-3 w-3" />
+                                ) : (
+                                    <HeartHandshake className="h-3 w-3" />
+                                )}
                                 Switch to {userRole === 'caretaker' ? 'Patient' : 'Caretaker'}
                              </Button>
                          )}
@@ -112,7 +121,7 @@ export default function Layout() {
                             onClick={handleLogout}
                             className="h-8 w-8 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50"
                          >
-                            <LogOut className="h-4 w-4" />
+                            <Power className="h-4 w-4" />
                          </Button>
                     </div>
                 </nav>
