@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Footer from "@/components/Footer";
-import { Mail, Lock, Eye, EyeOff, Pill, User } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
+import logo from '../../assets/logo.png';
 
 const formSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -68,15 +69,19 @@ export default function Signup() {
             <div className="w-full lg:w-1/2 bg-[#fcfdfe] relative overflow-y-auto h-screen z-10 custom-scrollbar flex justify-center">
                 <div className="w-full max-w-[500px] animate-fade-in px-4 py-16 flex flex-col justify-center min-h-full">
                     {/* Mobile Branding (Visible only on small screens) */}
-                    <div className="flex lg:hidden items-center justify-center gap-3 mb-6">
-                        <div className="h-10 w-10 bg-[#2563eb] rounded-none flex items-center justify-center shadow-2xl">
-                            <div className="relative rotate-45 transform">
-                                <Pill className="h-6 w-6 text-white" />
+                    <div className="flex lg:hidden items-baseline justify-center mb-6">
+                        <div className="h-12 w-12 flex items-center justify-center">
+                            <div className="relative transform">
+                                <img 
+                                    src={logo} 
+                                    alt="PillTime Logo"
+                                    className="h-12 w-auto object-contain drop-shadow-sm" 
+                                />
                             </div>
                         </div>
                         <div className="font-sans">
-                            <span className="text-2xl font-black text-slate-800 tracking-tighter leading-none">Pill </span>
-                            <span className="text-2xl font-black text-[#10b981] tracking-tighter leading-none">Time</span>
+                            <span className="text-3xl font-black text-slate-800 tracking-tighter leading-none">Pill </span>
+                            <span className="text-3xl font-black text-[#10b981] tracking-tighter leading-none">Time</span>
                         </div>
                     </div>
 
@@ -208,16 +213,20 @@ export default function Signup() {
             <div
                 className="hidden lg:block w-1/2 relative bg-cover bg-center overflow-hidden"
                 style={{
-                    backgroundImage: `url('/img1.png')`,
+                    backgroundImage: `url('/background.png')`,
                 }}
             >
                 <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" />
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
-                    <div className="flex items-center justify-center gap-3 drop-shadow-2xl scale-150">
-                        <div className="h-12 w-12 bg-[#2563eb] rounded-none flex items-center justify-center shadow-2xl">
-                            <div className="relative rotate-45 transform">
-                                <Pill className="h-8 w-8 text-white" />
+                    <div className="flex items-baseline justify-center drop-shadow-2xl scale-150">
+                        <div className="h-15 w-15 flex items-center justify-center">
+                            <div className="relative transform">
+                                <img 
+                                    src={logo} 
+                                    alt="PillTime Logo"
+                                    className="h-12 w-auto object-contain drop-shadow-sm" 
+                                />
                             </div>
                         </div>
                         <div className="font-sans">

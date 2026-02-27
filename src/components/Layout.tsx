@@ -1,9 +1,10 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Pill, Power, User, HeartHandshake } from "lucide-react";
+import { Power, User, HeartHandshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Footer from "@/components/Footer";
+import logo from '../assets/logo.png';
 
 export default function Layout() {
     const { session, signOut, userRole, updateRole } = useAuth()
@@ -26,9 +27,13 @@ export default function Layout() {
             {/* Header */}
             <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-xl border-b border-slate-200 hidden md:block">
                 <div className="container mx-auto flex h-20 items-center justify-between px-10 max-w-[1200px]">
-                    <Link to="/" className="flex items-center gap-4 group">
-                        <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_4px_12px_rgba(37,99,235,0.2)] group-hover:scale-105 transition-transform">
-                            <Pill className="h-5 w-5 text-white stroke-[3px]" />
+                    <Link to="/" className="flex items-baseline group">
+                        <div className="relative transform">
+                            <img 
+                                src={logo} 
+                                alt="PillTime Logo" 
+                                className="h-10 w-auto object-contain drop-shadow-sm" 
+                            />
                         </div>
                         <div>
                             <span className="text-xl font-black text-slate-800 tracking-tighter leading-none">Pill </span>
@@ -79,16 +84,20 @@ export default function Layout() {
 
             {/* Mobile Bottom Navigation - Pill Time Style */}
             {session && (
-                <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-3 md:hidden z-50 safe-area-bottom pb-6">
+                <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-3 md:hidden z-50 safe-area-bottom pb-4">
                     <div className="flex items-center justify-between">
                         {/* Left: Brand */}
-                        <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
-                                <Pill className="h-4 w-4 text-white stroke-[3px]" />
+                        <div className="flex items-baseline justify-center ">
+                            <div className="relative transform">
+                                <img 
+                                    src={logo} 
+                                    alt="PillTime Logo" 
+                                    className="h-8 w-auto object-contain drop-shadow-sm" 
+                                />
                             </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs font-black text-slate-800 tracking-tighter leading-none">Pill</span>
-                                <span className="text-xs font-black text-emerald-600 tracking-tighter leading-none">Time</span>
+                            <div className="flex">
+                                <span className="text-sm font-black text-slate-800 tracking-tighter leading-none">Pill</span>
+                                <span className="text-sm font-black text-emerald-600 tracking-tighter leading-none ml-1">Time</span>
                             </div>
                         </div>
 

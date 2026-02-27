@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Footer from "@/components/Footer";
-import { Mail, Lock, Eye, EyeOff, Pill } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import logo from '../../assets/logo.png';
 
 const formSchema = z.object({
     email: z.string().email("Please enter a valid email address"),
@@ -56,16 +57,20 @@ export default function Login() {
             <div
                 className="hidden lg:block w-1/2 relative bg-cover bg-center overflow-hidden"
                 style={{
-                    backgroundImage: `url('/img1.png')`,
+                    backgroundImage: `url('/background.png')`,
                 }}
             >
                 <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" />
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
-                    <div className="flex items-center justify-center gap-3 drop-shadow-2xl scale-150">
-                        <div className="h-12 w-12 bg-[#2563eb] rounded-none flex items-center justify-center shadow-2xl">
-                            <div className="relative rotate-45 transform">
-                                <Pill className="h-8 w-8 text-white" />
+                    <div className="flex items-baseline justify-center drop-shadow-2xl scale-150">
+                        <div className="h-15 w-15 flex items-center justify-center">
+                            <div className="relative transform">
+                                <img 
+                                    src={logo} 
+                                    alt="PillTime Logo" 
+                                    className="h-12 w-auto object-contain drop-shadow-sm" 
+                                />
                             </div>
                         </div>
                         <div className=" font-sans">
@@ -79,10 +84,14 @@ export default function Login() {
             <div className="w-full lg:w-1/2 flex items-center justify-center p-4 bg-[#fcfdfe] relative">
                 <div className="w-full max-w-[450px] animate-fade-in z-10">
                     {/* Mobile Branding (Visible only on small screens) */}
-                    <div className="flex lg:hidden items-center justify-center gap-3 mb-8">
-                        <div className="h-12 w-12 bg-[#2563eb] rounded-none flex items-center justify-center">
-                            <div className="relative rotate-45 transform">
-                                <Pill className="h-8 w-8 text-white" />
+                    <div className="flex lg:hidden items-baseline justify-center mb-8">
+                        <div className="h-12 w-12 flex items-center justify-center">
+                            <div className="relative transform">
+                                <img 
+                                    src={logo} 
+                                    alt="PillTime Logo" 
+                                    className="h-12 w-auto object-contain drop-shadow-sm" 
+                                />
                             </div>
                         </div>
                         <div className="font-sans">
